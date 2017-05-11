@@ -36,15 +36,25 @@ type Visitor interface {
 
 // Config is the config manager.
 type Config interface {
+	// Visitor adds a visitor plugin, Config invokes the plugins Visit method
+	// right away with a flat view of the underlying config struct.
 	Visitor(Visitor) error
+	// Walker adds a walker plugin, Config invokes the plugins Walk method
+	// right away with the underlying config struct.
 	Walker(Walker) error
 
 	// Must be called after Visitor and Walkers are added.
-	Usage()
+	// Parse will call the parse method of all the added plugins in the order
+	// that the plugins were registered, it will return early as soon as any
+	// plugin fails stops calling parse on plugins.
 	Parse() error
+
+	// Usage provides a simple usage message based on the meta data registered
+	// by the plugins.
+	Usage()
 }
 
-// New returns a new Config.
+// New returns a new Config. The conf must be a pointer to a struct.
 func New(conf interface{}) (Config, error) {
 	fields, err := flat.View(conf)
 	if err != nil {
@@ -71,6 +81,7 @@ type canSetUsage interface {
 
 func (c *config) Visitor(v Visitor) error {
 
+	// A special case for standard library flag plugin.
 	if v, ok := v.(canSetUsage); ok {
 		v.SetUsage(c.Usage)
 	}

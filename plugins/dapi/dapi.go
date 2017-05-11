@@ -1,4 +1,4 @@
-// Package dapi provides Kubernetes DownardAPI ini config support for uconfig.
+// Package dapi provides Kubernetes DownwardAPI ini config support for uconfig.
 package dapi
 
 import (
@@ -18,7 +18,7 @@ type DAPI interface {
 	Parse() error
 }
 
-// New returns DAPI plugin for uConfig that will load ini files from the provided base location. Please not that DAPI only works with explicitly tagged fields, the tags are in the form `dapi:"file_name:attribute"` where file_name is a file under base and attribute is the key expected in base/file_name.
+// New returns DAPI plugin for uConfig that will load ini files from the provided base location. Please note that DAPI only works with explicitly tagged fields, the tags are in the form `dapi:"file_name:attribute"` where file_name is a file under base and attribute is the key expected in base/file_name.
 func New(base string) DAPI {
 	return &visitor{
 		base: base,
