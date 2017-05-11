@@ -1,0 +1,113 @@
+// Package flat provides a flat view of an arbitrary nested structs.
+package flat
+
+import (
+	"errors"
+	"reflect"
+	"strings"
+)
+
+var (
+	// ErrUnexpectedType is returned when flatten sees an unsupported type.
+	ErrUnexpectedType = errors.New("Unexpected type, expecting a pointer to struct")
+)
+
+// Fields is a slice of Field.
+type Fields []Field
+
+// Visit provides a simple way to invoke a visitor function with each field.
+func (f Fields) Visit(visitor func(f Field) error) error {
+
+	for _, f := range f {
+		err := visitor(f)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Field describe an interface to our flat structs fields.
+type Field interface {
+	Name() string
+	Tag(key string) (string, bool)
+
+	Meta() map[string]string
+
+	String() string
+	Set(string) error
+	Get() interface{}
+}
+
+// Flatten provides a flat view of the provided structs an array of fields.
+func Flatten(s interface{}) (Fields, error) {
+
+	rs, err := unwrap(s)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return walkStruct("", rs)
+}
+
+func walkStruct(prefix string, rs reflect.Value) ([]Field, error) {
+
+	prefix = strings.Title(prefix)
+
+	fields := []Field{}
+
+	ts := rs.Type()
+	for i := 0; i < rs.NumField(); i++ {
+
+		fv := rs.Field(i)
+		ft := ts.Field(i)
+
+		switch fv.Kind() {
+
+		case reflect.Struct:
+			fieldPrefix := prefix
+			if !ft.Anonymous {
+				// Unless it is anonymous struct, append the field name to the prefix.
+				fieldPrefix = fieldPrefix + ft.Name
+			}
+			fs, err := walkStruct(fieldPrefix, fv)
+			if err != nil {
+				return nil, err
+			}
+			fields = append(fields, fs...)
+		default:
+			fields = append(fields, &field{
+				name:  prefix + ft.Name,
+				meta:  make(map[string]string, 5),
+				tag:   ft.Tag,
+				field: fv,
+			})
+		}
+	}
+
+	return fields, nil
+}
+
+func unwrap(s interface{}) (reflect.Value, error) {
+	rs := reflect.ValueOf(s)
+
+	if k := rs.Kind(); k != reflect.Ptr {
+		return rs, ErrUnexpectedType
+	}
+
+	rs = reflect.Indirect(rs)
+
+	if rs.Kind() == reflect.Interface {
+		rs = rs.Elem()
+	}
+
+	rs = reflect.Indirect(rs)
+
+	if rs.Kind() != reflect.Struct {
+		return rs, ErrUnexpectedType
+	}
+
+	return rs, nil
+}
