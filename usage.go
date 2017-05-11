@@ -14,9 +14,19 @@ func (c *config) Usage() {
 
 	headers := getHeaders(c.fields)
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', tabwriter.Debug)
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 	fmt.Fprintf(w, "\nSupported Fields:\n")
 	fmt.Fprintln(w, strings.ToUpper(strings.Join(headers, "\t")))
+
+	dashes := make([]string, len(headers))
+	for i, f := range headers {
+		n := len(f)
+		if n < 5 {
+			n = 5
+		}
+		dashes[i] = strings.Repeat("-", n)
+	}
+	fmt.Fprintln(w, strings.Join(dashes, "\t"))
 
 	for _, f := range c.fields {
 

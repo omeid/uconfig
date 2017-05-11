@@ -30,14 +30,18 @@ func (v *visitor) Visit(f flat.Fields) error {
 
 func (v *visitor) Parse() error {
 
-	return v.fields.Visit(func(f flat.Field) error {
-
+	for _, f := range v.fields {
 		value, ok := f.Tag(tag)
 		if !ok {
-			return nil
+			continue
 		}
 
 		f.Meta()[tag] = value
-		return f.Set(value)
-	})
+		err := f.Set(value)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

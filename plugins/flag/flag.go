@@ -48,14 +48,14 @@ func (v *visitor) Parse() error {
 	return v.fs.Parse(v.args)
 }
 
-func (v *visitor) Visit(f flat.Fields) error {
+func (v *visitor) Visit(fields flat.Fields) error {
 
-	return f.Visit(func(f flat.Field) error {
+	for _, f := range fields {
 		usage, _ := f.Tag("usage")
 
 		name, ok := f.Tag(tag)
 		if name == "-" {
-			return nil
+			continue
 		}
 
 		if !ok || name == "" {
@@ -66,8 +66,9 @@ func (v *visitor) Visit(f flat.Fields) error {
 
 		f.Meta()[tag] = "-" + name
 		v.fs.Var(f, name, usage)
-		return nil
-	})
+	}
+
+	return nil
 
 }
 

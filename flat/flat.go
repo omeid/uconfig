@@ -15,19 +15,6 @@ var (
 // Fields is a slice of Field.
 type Fields []Field
 
-// Visit provides a simple way to invoke a visitor function with each field.
-func (f Fields) Visit(visitor func(f Field) error) error {
-
-	for _, f := range f {
-		err := visitor(f)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // Field describe an interface to our flat structs fields.
 type Field interface {
 	Name() string

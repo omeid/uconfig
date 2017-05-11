@@ -36,11 +36,10 @@ func (v *visitor) Visit(f flat.Fields) error {
 
 	v.fields = f
 
-	return v.fields.Visit(func(f flat.Field) error {
-
+	for _, f := range v.fields {
 		name, ok := f.Tag(tag)
 		if name == "-" {
-			return nil
+			continue
 		}
 
 		if !ok || name == "" {
@@ -48,20 +47,19 @@ func (v *visitor) Visit(f flat.Fields) error {
 		}
 
 		f.Meta()[tag] = "$" + name
+	}
 
-		return nil
-	})
+	return nil
 }
 
 func (v *visitor) Parse() error {
 
-	return v.fields.Visit(func(f flat.Field) error {
-
+	for _, f := range v.fields {
 		// Next block could use field.Meta and grab the tag name.
 		/* start */
 		name, ok := f.Tag(tag)
 		if name == "-" {
-			return nil
+			continue
 		}
 
 		if !ok || name == "" {
@@ -72,8 +70,13 @@ func (v *visitor) Parse() error {
 		value := os.Getenv(name)
 
 		if value == "" {
-			return nil
+			continue
 		}
-		return f.Set(value)
-	})
+		err := f.Set(value)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -37,11 +37,11 @@ func (v *visitor) Visit(f flat.Fields) error {
 
 	v.fields = f
 
-	f.Visit(func(f flat.Field) error {
+	for _, f := range v.fields {
 		tag, ok := f.Tag(tag)
 
 		if !ok {
-			return nil
+			continue
 		}
 
 		file, _, err := splitTag(tag)
@@ -53,9 +53,7 @@ func (v *visitor) Visit(f flat.Fields) error {
 		f.Meta()[tag] = tag
 
 		v.files = append(v.files, file)
-		return nil
-
-	})
+	}
 	return nil
 }
 
@@ -72,11 +70,11 @@ func (v *visitor) Parse() error {
 		files[f] = cfg
 	}
 
-	return v.fields.Visit(func(f flat.Field) error {
+	for _, f := range v.fields {
 		tag, ok := f.Tag(tag)
 
 		if !ok {
-			return nil
+			continue
 		}
 
 		file, field, err := splitTag(tag)
@@ -86,9 +84,14 @@ func (v *visitor) Parse() error {
 		}
 
 		value := files[file].Section("").Key(field).String()
-		return f.Set(value)
-	})
+		err = f.Set(value)
+		if err != nil {
+			return err
+		}
 
+	}
+
+	return nil
 }
 
 func splitTag(tag string) (string, string, error) {
