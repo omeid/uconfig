@@ -1,10 +1,12 @@
+// Package dapi provides Kubernetes DownardAPI ini config support for uconfig.
 package dapi
 
 import (
 	"errors"
+	"path/filepath"
 	"strings"
 
-	"github.com/danverbraganza/varcaser/varcaser"
+	"github.com/go-ini/ini"
 	"github.com/omeid/uconfig/flat"
 )
 
@@ -16,22 +18,19 @@ type DAPI interface {
 	Parse() error
 }
 
-// New returns an EnvSet.
+// New returns DAPI plugin for uConfig that will load ini files from the provided base location. Please not that DAPI only works with explicitly tagged fields, the tags are in the form `dapi:"file_name:attribute"` where file_name is a file under base and attribute is the key expected in base/file_name.
 func New(base string) DAPI {
 	return &visitor{
 		base: base,
-		vc: varcaser.Caser{
-			From: varcaser.UpperCamelCase,
-			To:   varcaser.LowerCamelCase,
-		},
 	}
 }
 
 type visitor struct {
-	vc     varcaser.Caser
 	fields flat.Fields
 
 	base string
+
+	files []string
 }
 
 func (v *visitor) Visit(f flat.Fields) error {
@@ -53,13 +52,25 @@ func (v *visitor) Visit(f flat.Fields) error {
 
 		f.Meta()[tag] = tag
 
-		return checkFile(file)
+		v.files = append(v.files, file)
+		return nil
 
 	})
 	return nil
 }
 
 func (v *visitor) Parse() error {
+
+	files := map[string]*ini.File{}
+
+	for _, f := range v.files {
+		cfg, err := ini.InsensitiveLoad(filepath.Join(v.base, f))
+		if err != nil {
+			return err
+		}
+
+		files[f] = cfg
+	}
 
 	return v.fields.Visit(func(f flat.Field) error {
 		tag, ok := f.Tag(tag)
@@ -70,12 +81,11 @@ func (v *visitor) Parse() error {
 
 		file, field, err := splitTag(tag)
 
-		value, err := readField(v.base, file, field)
-
 		if err != nil {
 			return err
 		}
 
+		value := files[file].Section("").Key(field).String()
 		return f.Set(value)
 	})
 
@@ -89,12 +99,4 @@ func splitTag(tag string) (string, string, error) {
 	}
 
 	return segs[0], segs[1], nil
-}
-
-func checkFile(path string) error {
-	return nil
-}
-
-func readField(base string, file string, field string) (string, error) {
-	return "", nil
 }

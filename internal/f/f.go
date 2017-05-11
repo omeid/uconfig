@@ -1,3 +1,4 @@
+// Package f provides simple text fixtures for uconfig.
 package f
 
 //Anon is part of text fixtures.
