@@ -12,7 +12,7 @@ import (
 func TestFlagBasic(t *testing.T) {
 
 	args := []string{
-		"-go-hard",
+		"-gohard",
 		"-version=0.2",
 		"-redis-host=redis-host",
 		"-redis-port=6379",

@@ -13,7 +13,7 @@ import (
 func TestEnvBasic(t *testing.T) {
 
 	envs := map[string]string{
-		"GO_HARD":              "T",
+		"GOHARD":               "T",
 		"VERSION":              "0.2",
 		"REDIS_HOST":           "redis-host",
 		"REDIS_PORT":           "6379",

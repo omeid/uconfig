@@ -1,14 +1,7 @@
 // Package uconfig provides advanced command line flags supporting defaults, env vars, and config structs.
 package uconfig
 
-import (
-	"os"
-
-	"github.com/omeid/uconfig/flat"
-	"github.com/omeid/uconfig/plugins/defaults"
-	"github.com/omeid/uconfig/plugins/env"
-	"github.com/omeid/uconfig/plugins/flag"
-)
+import "github.com/omeid/uconfig/flat"
 
 // Plugin is the common interface for all plugins.
 type Plugin interface {
@@ -53,7 +46,7 @@ type Config interface {
 
 // New returns a new Config.
 func New(conf interface{}) (Config, error) {
-	fields, err := flat.Flatten(conf)
+	fields, err := flat.View(conf)
 	if err != nil {
 		return nil, err
 	}
@@ -64,24 +57,6 @@ func New(conf interface{}) (Config, error) {
 	}
 
 	return c, nil
-}
-
-// Classic is a simple way to get started.
-func Classic(conf interface{}) error {
-
-	c, err := New(conf)
-
-	if err != nil {
-		return err
-
-	}
-
-	fs := flag.New(os.Args[0], flag.ContinueOnError, os.Args[1:])
-
-	c.Visitor(defaults.New())
-	c.Visitor(env.New())
-	c.Visitor(fs)
-	return c.Parse()
 }
 
 type config struct {

@@ -1,10 +1,7 @@
-// Package defaults provides flags integration for uconfig
+// Package defaults provides flags support for uconfig
 package defaults
 
-import (
-	"github.com/danverbraganza/varcaser/varcaser"
-	"github.com/omeid/uconfig/flat"
-)
+import "github.com/omeid/uconfig/flat"
 
 const tag = "default"
 
@@ -17,16 +14,10 @@ type Defaults interface {
 
 // New returns an EnvSet.
 func New() Defaults {
-	return &visitor{
-		vc: varcaser.Caser{
-			From: varcaser.UpperCamelCase,
-			To:   varcaser.ScreamingSnakeCase,
-		},
-	}
+	return &visitor{}
 }
 
 type visitor struct {
-	vc     varcaser.Caser
 	fields flat.Fields
 }
 

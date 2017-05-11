@@ -10,25 +10,25 @@ import (
 func TestFlattenNested(t *testing.T) {
 
 	conf := f.Config{}
-	fs, err := Flatten(&conf)
+	fs, err := View(&conf)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	fields := map[string]bool{
-		"GoHard":             false,
-		"Version":            false,
-		"RedisHost":          false,
-		"RedisPort":          false,
-		"RethinkHostAddress": false,
-		"RethinkHostPort":    false,
-		"RethinkDb":          false,
+		"GoHard":               false,
+		"Version":              false,
+		"Redis.Host":           false,
+		"Redis.Port":           false,
+		"Rethink.Host.Address": false,
+		"Rethink.Host.Port":    false,
+		"Rethink.Db":           false,
 	}
 
-	// for _, fs := range fs {
-	// 	t.Log(" - ", fs.Name())
-	// }
+	for _, fs := range fs {
+		t.Log(" - ", fs.Name())
+	}
 
 	for _, fs := range fs {
 		name := fs.Name()
@@ -96,7 +96,7 @@ func TestFlattenTypes(t *testing.T) {
 
 	_ = values
 
-	fs, err := Flatten(&value)
+	fs, err := View(&value)
 
 	if err != nil {
 		t.Fatal(err)

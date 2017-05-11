@@ -1,10 +1,10 @@
-// Package env provides flags integration for uconfig
+// Package env provides environment variables support for uconfig
 package env
 
 import (
 	"os"
+	"strings"
 
-	"github.com/danverbraganza/varcaser/varcaser"
 	"github.com/omeid/uconfig/flat"
 )
 
@@ -19,19 +19,19 @@ type Envs interface {
 
 // New returns an EnvSet.
 func New() Envs {
-	return &visitor{
-		vc: varcaser.Caser{
-			From: varcaser.UpperCamelCase,
-			To:   varcaser.ScreamingSnakeCase,
-		},
-	}
+	return &visitor{}
 }
 
 type visitor struct {
-	vc     varcaser.Caser
 	fields flat.Fields
 }
 
+func makeEnvName(name string) string {
+	name = strings.Replace(name, ".", "_", -1)
+	name = strings.ToUpper(name)
+
+	return name
+}
 func (v *visitor) Visit(f flat.Fields) error {
 
 	v.fields = f
@@ -44,8 +44,7 @@ func (v *visitor) Visit(f flat.Fields) error {
 		}
 
 		if !ok || name == "" {
-			name = f.Name()
-			name = v.vc.String(name)
+			name = makeEnvName(f.Name())
 		}
 
 		f.Meta()[tag] = "$" + name
@@ -66,8 +65,7 @@ func (v *visitor) Parse() error {
 		}
 
 		if !ok || name == "" {
-			name = f.Name()
-			name = v.vc.String(name)
+			name = makeEnvName(f.Name())
 		}
 
 		/* end */

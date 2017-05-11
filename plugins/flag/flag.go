@@ -1,10 +1,10 @@
-// Package flag provides flags integration for uconfig
+// Package flag provides flags support for uconfig
 package flag
 
 import (
 	"flag"
+	"strings"
 
-	"github.com/danverbraganza/varcaser/varcaser"
 	"github.com/omeid/uconfig/flat"
 )
 
@@ -32,11 +32,7 @@ const (
 // New returns a new Flags
 func New(name string, errorHandling ErrorHandling, args []string) Flags {
 	return &visitor{
-		fs: flag.NewFlagSet(name, flag.ErrorHandling(errorHandling)),
-		vc: varcaser.Caser{
-			From: varcaser.UpperCamelCase,
-			To:   varcaser.KebabCase,
-		},
+		fs:   flag.NewFlagSet(name, flag.ErrorHandling(errorHandling)),
 		args: args,
 	}
 }
@@ -45,7 +41,6 @@ var _ Flags = (*visitor)(nil)
 
 type visitor struct {
 	fs   *flag.FlagSet
-	vc   varcaser.Caser
 	args []string
 }
 
@@ -65,10 +60,11 @@ func (v *visitor) Visit(f flat.Fields) error {
 
 		if !ok || name == "" {
 			name = f.Name()
-			name = v.vc.String(name)
+			name = strings.Replace(name, ".", "-", -1)
+			name = strings.ToLower(name)
 		}
 
-		f.Meta()[tag] = name
+		f.Meta()[tag] = "-" + name
 		v.fs.Var(f, name, usage)
 		return nil
 	})

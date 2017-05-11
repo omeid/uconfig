@@ -40,8 +40,8 @@ type Field interface {
 	Get() interface{}
 }
 
-// Flatten provides a flat view of the provided structs an array of fields.
-func Flatten(s interface{}) (Fields, error) {
+// View provides a flat view of the provided structs an array of fields.
+func View(s interface{}) (Fields, error) {
 
 	rs, err := unwrap(s)
 
@@ -67,19 +67,29 @@ func walkStruct(prefix string, rs reflect.Value) ([]Field, error) {
 		switch fv.Kind() {
 
 		case reflect.Struct:
-			fieldPrefix := prefix
+			structPrefix := prefix
 			if !ft.Anonymous {
 				// Unless it is anonymous struct, append the field name to the prefix.
-				fieldPrefix = fieldPrefix + ft.Name
+				if structPrefix == "" {
+					structPrefix = ft.Name
+				} else {
+					structPrefix = structPrefix + "." + ft.Name
+				}
 			}
-			fs, err := walkStruct(fieldPrefix, fv)
+			fs, err := walkStruct(structPrefix, fv)
 			if err != nil {
 				return nil, err
 			}
 			fields = append(fields, fs...)
 		default:
+
+			fieldName := ft.Name
+			if prefix != "" {
+				fieldName = prefix + "." + ft.Name
+			}
+
 			fields = append(fields, &field{
-				name:  prefix + ft.Name,
+				name:  fieldName,
 				meta:  make(map[string]string, 5),
 				tag:   ft.Tag,
 				field: fv,
