@@ -26,9 +26,9 @@ func TestFlattenNested(t *testing.T) {
 		"Rethink.Db":           false,
 	}
 
-	for _, fs := range fs {
-		t.Log(" - ", fs.Name())
-	}
+	// for _, fs := range fs {
+	// 	t.Log(" - ", fs.Name())
+	// }
 
 	for _, fs := range fs {
 		name := fs.Name()

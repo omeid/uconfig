@@ -1,7 +1,6 @@
 package dapi_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -21,15 +20,7 @@ type fDAPI struct {
 	AZ         string `dapi:"labels:zone"`
 }
 
-func TestEnvTag(t *testing.T) {
-
-	envs := map[string]string{
-		"MY_HOST_NAME": "https://blah.bleh",
-	}
-
-	for key, value := range envs {
-		os.Setenv(key, value)
-	}
+func TestDAPIBasic(t *testing.T) {
 
 	expect := fDAPI{
 		Version: fDAPIVersion{

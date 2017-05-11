@@ -13,7 +13,7 @@ import (
 	"github.com/omeid/uconfig/plugins/file"
 )
 
-func TestEnvBasic(t *testing.T) {
+func TestFileBasic(t *testing.T) {
 
 	expect := f.Config{
 		Anon: f.Anon{
