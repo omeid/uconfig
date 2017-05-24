@@ -3,6 +3,7 @@ package flag
 
 import (
 	"flag"
+	"os"
 	"strings"
 
 	"github.com/omeid/uconfig/flat"
@@ -35,6 +36,12 @@ func New(name string, errorHandling ErrorHandling, args []string) Flags {
 		fs:   flag.NewFlagSet(name, flag.ErrorHandling(errorHandling)),
 		args: args,
 	}
+}
+
+// Standard returns a set of flags configured in the common way.
+// It is same as: `New(os.Args[0], ContinueOnError, os.Args[1:])`
+func Standard() Flags {
+	return New(os.Args[0], ContinueOnError, os.Args[1:])
 }
 
 var _ Flags = (*visitor)(nil)

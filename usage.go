@@ -2,6 +2,7 @@ package uconfig
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sort"
 	"strings"
@@ -33,7 +34,7 @@ func (c *config) Usage() {
 		values := make([]string, len(headers))
 		values[0] = f.Name()
 		for i, header := range headers[1:] {
-			value, _ := f.Meta()[header]
+			value := f.Meta()[header]
 			values[i+1] = value
 		}
 
@@ -41,7 +42,11 @@ func (c *config) Usage() {
 
 	}
 
-	w.Flush()
+	err := w.Flush()
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 type null struct{}

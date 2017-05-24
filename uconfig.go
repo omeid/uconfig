@@ -1,7 +1,11 @@
 // Package uconfig provides advanced command line flags supporting defaults, env vars, and config structs.
 package uconfig
 
-import "github.com/omeid/uconfig/flat"
+import (
+	"fmt"
+
+	"github.com/omeid/uconfig/flat"
+)
 
 // Plugin is the common interface for all plugins.
 type Plugin interface {
@@ -55,7 +59,7 @@ type Config interface {
 }
 
 // New returns a new Config. The conf must be a pointer to a struct.
-func New(conf interface{}) (Config, error) {
+func New(conf interface{}, plugins ...Plugin) (Config, error) {
 	fields, err := flat.View(conf)
 	if err != nil {
 		return nil, err
@@ -64,6 +68,24 @@ func New(conf interface{}) (Config, error) {
 	c := &config{
 		conf:   conf,
 		fields: fields,
+	}
+
+	for _, plugin := range plugins {
+		switch plugin := plugin.(type) {
+		case Visitor:
+			err := c.Visitor(plugin)
+			if err != nil {
+				return c, err
+			}
+
+		case Walker:
+			err := c.Walker(plugin)
+			if err != nil {
+				return c, err
+			}
+		default:
+			return nil, fmt.Errorf("Unsupported Plugin. Expecting a Walker or Visitor")
+		}
 	}
 
 	return c, nil
