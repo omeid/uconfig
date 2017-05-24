@@ -60,7 +60,7 @@ type Walker interface {
 
 ### Visitors
 
-Visitors get a _flatview_ of the configuration struct, which is a flat view of the structs regardless of nesting level, for more details see the flatview package documentation.
+Visitors get a _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ of the configuration struct, which is a flat view of the structs regardless of nesting level, for more details see the [flat](https://godoc.org/github.com/omeid/uconfig/flat) package documentation.
 
 Plugins that load the configurations from flat structures (e.g flags, environment variables, default tags) are good candidts for this type of plugin.
 
