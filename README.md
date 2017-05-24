@@ -48,7 +48,7 @@ uConfig supports two kind of plugins, Walkers and Visitors.
 Walkers are used for configuration plugins that take the whole config struct and unmarshal the underlying content into the config struct.
 Plugins that load the configuration from files are good candidates for this.
 
-```
+```go
 // Walker is the interface for plugins that take the whole config, like file loaders.
 type Walker interface {
   Plugin
@@ -66,12 +66,6 @@ Plugins that load the configurations from flat structures (e.g flags, environmen
 
 
 ```go
-// WalkerFunc is a helper type that turns a Walk function into a Walker.
-// type WalkerFunc func(interface{}) error
-
-// Walk implements Walker for WalkerFunc
-// func (wf WalkerFunc) Walk(conf interface{}) error { return wf(conf) }
-
 // Visitor is the interface for plugins that require a flat view of the config, like flags, env vars
 type Visitor interface {
   Plugin

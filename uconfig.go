@@ -19,12 +19,6 @@ type Walker interface {
 	Walk(interface{}) error
 }
 
-// WalkerFunc is a helper type that turns a Walk function into a Walker.
-// type WalkerFunc func(interface{}) error
-
-// Walk implements Walker for WalkerFunc
-// func (wf WalkerFunc) Walk(conf interface{}) error { return wf(conf) }
-
 // Visitor is the interface for plugins that require a flat view of the config, like flags, env vars
 type Visitor interface {
 	Plugin
