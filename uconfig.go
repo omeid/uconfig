@@ -97,9 +97,9 @@ type canSetUsage interface {
 
 func (c *config) Visitor(v Visitor) error {
 
-	// A special case for standard library flag plugin.
+	// disable the std flag usage
 	if v, ok := v.(canSetUsage); ok {
-		v.SetUsage(c.Usage)
+		v.SetUsage(func() {})
 	}
 
 	err := v.Visit(c.fields)

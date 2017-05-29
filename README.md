@@ -1,6 +1,6 @@
 # uConfig [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/omeid/uconfig)  [![Build Status](https://travis-ci.org/omeid/uconfig.svg?branch=master)](https://travis-ci.org/omeid/uconfig) [![Go Report Card](https://goreportcard.com/badge/github.com/omeid/uconfig)](https://goreportcard.com/report/github.com/omeid/uconfig)
 
-uConfig is an opinionated* extendable and plugable configuration management.
+uConfig is an unopinionated, extendable and plugable configuration management.
 
 Every aspect of configuration is provided through a plugin, which means you can have any combination of flags, environment variables, defaults, Kubernetes Downward API, and you want it, through plugins.
 
@@ -11,15 +11,16 @@ uConfig takes the config schema as a struct decorated with tags, nesting is supp
 ## Example Configuration: 
 
 ```go
-// package database 
+package database
 // Config holds the database configurations.
 type Config struct {
   Address  string `default:"localhost" env:"DATABASE_HOST"`
   Port     string `default:"28015" env:"DATABASE_SERVICE_PORT"`
   Database string `default:"my-project"`
 }
-
-// package redis
+```
+```go
+package redis
 // Config describes the requirement for redis client.
 type Config struct {
   Address  string `default:"redis-master" env:"REDIS_HOST"`
@@ -27,8 +28,10 @@ type Config struct {
   Password string `default:""`
   DB       int    `default:"0"`
 }
+```
 
-// package main
+```go
+package main
 // Config is our distribution configs as required for services and clients.
 type Config struct {
 
@@ -88,9 +91,6 @@ import (
 	"os"
 
 	"github.com/omeid/uconfig"
-	"github.com/omeid/uconfig/plugins/defaults"
-	"github.com/omeid/uconfig/plugins/env"
-	"github.com/omeid/uconfig/plugins/flag"
 )
 
 func main() error {
@@ -98,41 +98,18 @@ func main() error {
 	conf := &YourConfigStruct{}
 
 	// Simply
-	c, err := uconfig.CLassic(conf)
+	c, err := uconfig.Classic(conf, uconfig.Files{
+		"path/to/config.json": json.Unmarshal,
+		"path/to/config.toml": toml.Unmarshal,
+	})
 	if err != nil {
 		c.Usage()
 		os.Exit(1)
 	}
-
-	// Or if you want more control over what plugins are loaded,
-	// the Classic helper is equivalent to this:
-
-	// Start Classic
-	c, err := uconfig.New(conf,
-		// We use plugins to add support for loading config
-		// from different source. The order is important!
-
-		// Loads the default values from the default tag.
-		defaults.New(),
-		// Loads the configurations from the env vars.
-		env.New(),
-		// Loads the configurations from the flags.
-		flag.Standard(),
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	err := c.Parse()
-	if err != nil {
-		c.Usage()
-		log.Fatal(err)
-	}
-	// End Classic
-
 	// User your config here as you please.
 }
 
 ```
 
+See the Classic source for how to compose plugins.  
 For more details, see the [godoc](https://godoc.org/github.com/omeid/uconfig).
