@@ -26,12 +26,6 @@ type Visitor interface {
 	Visit(flat.Fields) error
 }
 
-// VisitorFunc is a helper type that turns a Visitor function into a Visitor.
-// type VisitorFunc func(flat.Field) error
-
-// Visit implements Visitor for VisitorFunc
-// func (vf VisitorFunc) Visit(f flat.Field) error { return vf(f) }
-
 // Config is the config manager.
 type Config interface {
 	// Visitor adds a visitor plugin, Config invokes the plugins Visit method
@@ -44,7 +38,7 @@ type Config interface {
 	// Must be called after Visitor and Walkers are added.
 	// Parse will call the parse method of all the added plugins in the order
 	// that the plugins were registered, it will return early as soon as any
-	// plugin fails stops calling parse on plugins.
+	// plugin fails.
 	Parse() error
 
 	// Usage provides a simple usage message based on the meta data registered

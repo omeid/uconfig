@@ -7,10 +7,12 @@ import (
 	"github.com/omeid/uconfig/plugins/flag"
 )
 
-// Files represents a setfiles and their unmarshal functions
+// Files represents a set of file paths and the approprate
+// unmarshal function for the given file.
 type Files map[string]file.Unmarshal
 
-// Classic creates a uconfig manager with defaults,environment variables, and flags (in that order) and parses them right away.
+// Classic creates a uconfig manager with defaults,environment variables, and flags (in that order)
+// and optionally file loaders based on the provided Files map and parses them right away.
 func Classic(conf interface{}, files Files) (Config, error) {
 	c, err := New(conf,
 		defaults.New(),
