@@ -12,14 +12,16 @@ type Plugin interface {
 	Parse() error
 }
 
-// Walker is the interface for plugins that take the whole config, like file loaders.
+// Walker is the interface for plugins that take the whole
+// config, like file loaders.
 type Walker interface {
 	Plugin
 
 	Walk(interface{}) error
 }
 
-// Visitor is the interface for plugins that require a flat view of the config, like flags, env vars
+// Visitor is the interface for plugins that require a flat view
+// of the config, like flags, env vars
 type Visitor interface {
 	Plugin
 
