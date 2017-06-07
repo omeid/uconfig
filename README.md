@@ -2,7 +2,7 @@
 
 uConfig is an unopinionated, extendable and plugable configuration management.
 
-Every aspect of configuration is provided through a plugin, which means you can have any combination of flags, environment variables, defaults, Kubernetes Downward API, and what you want it, through plugins.
+Every aspect of configuration is provided through a plugin, which means you can have any combination of flags, environment variables, defaults, Kubernetes Downward API, and what you want, through plugins.
 
 
 uConfig takes the config schema as a struct decorated with tags, nesting is supported.
@@ -89,6 +89,9 @@ package main
 import (
   "log"
   "os"
+
+  "encoding/json"
+  "github.com/BurntSushi/toml"
 
   "github.com/omeid/uconfig"
 )
