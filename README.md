@@ -2,7 +2,7 @@
 
 uConfig is an unopinionated, extendable and plugable configuration management.
 
-Every aspect of configuration is provided through a plugin, which means you can have any combination of flags, environment variables, defaults, Kubernetes Downward API, and you want it, through plugins.
+Every aspect of configuration is provided through a plugin, which means you can have any combination of flags, environment variables, defaults, Kubernetes Downward API, and what you want it, through plugins.
 
 
 uConfig takes the config schema as a struct decorated with tags, nesting is supported.
@@ -87,26 +87,49 @@ type Visitor interface {
 package main
 
 import (
-	"log"
-	"os"
+  "log"
+  "os"
 
-	"github.com/omeid/uconfig"
+  "github.com/omeid/uconfig"
 )
 
 func main() error {
 
-	conf := &YourConfigStruct{}
+  conf := &YourConfigStruct{}
 
-	// Simply
-	c, err := uconfig.Classic(conf, uconfig.Files{
-		"path/to/config.json": json.Unmarshal,
-		"path/to/config.toml": toml.Unmarshal,
-	})
-	if err != nil {
-		c.Usage()
-		os.Exit(1)
-	}
-	// User your config here as you please.
+  // Simply
+  c, err := uconfig.Classic(conf, uconfig.Files{
+    "path/to/config.json": json.Unmarshal,
+    "path/to/config.toml": toml.Unmarshal,
+  })
+  if err != nil {
+    c.Usage()
+    os.Exit(1)
+  }
+  // User your config here as you please.
+}
+
+```
+
+For tests, you may consider the `Must` function to set the defaults, like so
+```go
+package something 
+
+import (
+  "testing"
+
+  "github.com/omeid/uconfig"
+  "github.com/omeid/uconfig/defaults"
+)
+
+func TestSomething(t *testing.T) error {
+
+  conf := &YourConfigStruct{}
+
+  // It will panic on error
+  uconfig.Must(conf, defaults.New())
+
+  // Use your conf as you please.
 }
 
 ```
