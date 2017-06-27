@@ -7,6 +7,8 @@ Every aspect of configuration is provided through a plugin, which means you can 
 
 uConfig takes the config schema as a struct decorated with tags, nesting is supported.
 
+Supports all basic types, time.Duration, time.Time, and you any other type through `encoding.TextUnmarshaler` interface.
+See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package for details.
 
 ## Example Configuration: 
 

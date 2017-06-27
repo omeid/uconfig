@@ -1,8 +1,10 @@
 package flat
 
 import (
+	"encoding"
 	"reflect"
 	"strconv"
+	"time"
 )
 
 var _ Field = (*field)(nil)
@@ -41,7 +43,15 @@ func (f *field) Get() interface{} {
 	return nil
 }
 
+var textUnmarshalerType = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()
+
 func (f *field) Set(value string) error {
+
+	t := f.field.Type()
+
+	if t.Implements(textUnmarshalerType) {
+		return f.setUnmarshale([]byte(value))
+	}
 
 	switch f.field.Kind() {
 	case reflect.String:
@@ -49,6 +59,9 @@ func (f *field) Set(value string) error {
 	case reflect.Bool:
 		return f.setBool(value)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if t.String() == "time.Duration" {
+			return f.setDuration(value)
+		}
 		return f.setInt(value)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return f.setUint(value)
@@ -70,6 +83,31 @@ func (f *field) Set(value string) error {
 		// Never case reflect.Struct:
 		// Never case reflect.UnsafePointer:
 	}
+	return nil
+}
+
+func (f *field) setUnmarshale(value []byte) error {
+
+	if f.field.IsNil() {
+		f.field.Set(reflect.New(f.field.Type().Elem()))
+	}
+	ut := f.field.MethodByName("UnmarshalText")
+
+	err := ut.Call([]reflect.Value{reflect.ValueOf(value)})[0]
+
+	if err.IsNil() {
+		return nil
+	}
+	return err.Interface().(error)
+}
+
+func (f *field) setDuration(value string) error {
+	duration, err := time.ParseDuration(value)
+	if err != nil {
+		return err
+	}
+
+	f.field.SetInt(int64(duration))
 	return nil
 }
 
