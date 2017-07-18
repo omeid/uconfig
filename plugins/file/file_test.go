@@ -6,7 +6,6 @@ import (
 	"io"
 	"testing"
 
-	"github.com/BurntSushi/toml"
 	"github.com/go-test/deep"
 	"github.com/omeid/uconfig"
 	"github.com/omeid/uconfig/internal/f"
@@ -36,23 +35,6 @@ func TestFileBasic(t *testing.T) {
 		},
 	}
 
-	srcTOML := `
-	Version = "0.2"
-
-	GoHard =  true
-
-	[Redis]
-	Host =  "redis-host"
-	Port =  6379
-
-	[Rethink]
-		Db =  "base"
-
-		[Rethink.Host]
-			Address =  "rethink-cluster"
-			Port =     "28015"
-	`
-
 	srcJSON := `{
 		"Version": "0.2",
 		"GoHard": true,
@@ -76,11 +58,6 @@ func TestFileBasic(t *testing.T) {
 	}
 
 	for _, tc := range []TestCase{
-		{
-			"toml",
-			bytes.NewReader([]byte(srcTOML)),
-			toml.Unmarshal,
-		},
 		{
 			"json",
 			bytes.NewReader([]byte(srcJSON)),
