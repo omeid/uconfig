@@ -81,37 +81,90 @@ type Visitor interface {
 ```
 
 
+## File Loaders
+
+File loaders consist of a map of file path (`string`) to Unmarshal func (`func(src []byte, v interface{}) error`); this means that if you can unmarshal it, you can probably use it as a config file with `uConfig`!
+
+Unmarshallers known to work as file loaders include:
+
+* JSON: `encoding/json`
+* TOML: `github.com/BurntSushi/toml`
+* YAML: `gopkg.in/yaml.v2`
+  * Note: YAML unmarshaller doesn't appear to handle embedded structs as cleanly as some unmarshallers; you may need to nest the embedded struct's options in your YAML file (see `version` in the example below)
+
+
 ## Example
 
+The following example uses `uconfig.Classic` to create a uConfig manager which processes defaults, environment variables, and flags (in that order) - plus (optionally) one or more file loaders.  In this case, we're using a single YAML config file, but you can specify multiple files (each with its own unmarshaller) in the `uconfig.Files` map if required.
 
+```yaml
+# path/to/config.yaml
+# YAML unmarshaller doesn't appear to handle flattened embedded structs,
+# so 'version' needs to sit under 'anon' to map correctly
+anon:
+  version: '0.2'
+gohard: true
+redis:
+  host: redis-host
+  port: 6379
+rethink:
+  db: base
+  host:
+    address: rethink-cluster
+    port: '28015'
+```
 
 ```go
+// main.go
 package main
 
 import (
-  "log"
   "os"
 
-  "encoding/json"
-  "github.com/BurntSushi/toml"
+  "gopkg.in/yaml.v2"
 
   "github.com/omeid/uconfig"
 )
 
-func main() error {
+type Anon struct {
+  Version string `default:"0.0.1" env:"APP_VERSION"`
+}
 
-  conf := &YourConfigStruct{}
+type Host struct {
+  Address string `default:"localhost" env:"RETHINKDB_HOST"`
+  Port    string `default:"28015" env:"RETHINKDB_PORT"`
+}
+
+type RethinkConfig struct {
+  Host Host
+  Db   string `default:"my-project"`
+}
+
+type Redis struct {
+  Host string `default:"redis-master" env:"REDIS_HOST"`
+  Port int    `default:"6379" env:"REDIS_SERVICE_PORT"`
+}
+
+type YourConfig struct {
+  Anon
+  GoHard  bool
+  Redis   Redis
+  Rethink RethinkConfig
+}
+
+func main() {
+
+  conf := &YourConfig{}
 
   // Simply
   c, err := uconfig.Classic(conf, uconfig.Files{
-    "path/to/config.json": json.Unmarshal,
-    "path/to/config.toml": toml.Unmarshal,
+    "path/to/config.yaml": yaml.Unmarshal,
   })
   if err != nil {
     c.Usage()
     os.Exit(1)
   }
-  // User your config here as you please.
+  // Use your config here as you please.
 }
 
 ```
