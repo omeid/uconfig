@@ -81,11 +81,11 @@ type Visitor interface {
 ```
 
 
-## File Loaders
+## File Plugin
 
-File loaders consist of a map of file path (`string`) to Unmarshal func (`func(src []byte, v interface{}) error`); this means that if you can unmarshal it, you can probably use it as a config file with `uConfig`!
+File plugin is a walker plugin that loads configuration files of different formats by way of accepting an Unmarshaler function that follows the standard unmarshal function of type `func(src []byte, v interface{}) error`; this allows you to use `encoding/json` and other encoders that follow the same interface. 
 
-Unmarshallers known to work as file loaders include:
+Following is some common unmarshalers that follow the standard unmarshaler function:
 
 * JSON: `encoding/json`
 * TOML: `github.com/BurntSushi/toml`
@@ -95,7 +95,8 @@ Unmarshallers known to work as file loaders include:
 
 ## Example
 
-The following example uses `uconfig.Classic` to create a uConfig manager which processes defaults, environment variables, and flags (in that order) - plus (optionally) one or more file loaders.  In this case, we're using a single YAML config file, but you can specify multiple files (each with its own unmarshaller) in the `uconfig.Files` map if required.
+The following example uses `uconfig.Classic` to create a uConfig manager which processes defaults, optionally any config files, environment variables, and flags; in that order.
+In this example, we're using a single YAML config file, but you can specify multiple files (each with its own unmarshaller) in the `uconfig.Files` map if required.
 
 ```yaml
 # path/to/config.yaml
