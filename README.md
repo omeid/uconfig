@@ -44,57 +44,6 @@ type Config struct {
 ```
 
 
-## Plugins
-
-uConfig supports two kind of plugins, Walkers and Visitors.
-
-### Walkers 
-
-Walkers are used for configuration plugins that take the whole config struct and unmarshal the underlying content into the config struct.
-Plugins that load the configuration from files are good candidates for this.
-
-```go
-// Walker is the interface for plugins that take the whole config, like file loaders.
-type Walker interface {
-  Plugin
-
-  Walk(interface{}) error
-}
-```
-
-
-### Visitors
-
-Visitors get a _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ of the configuration struct, which is a flat view of the structs regardless of nesting level, for more details see the [flat](https://godoc.org/github.com/omeid/uconfig/flat) package documentation.
-
-Plugins that load the configurations from flat structures (e.g flags, environment variables, default tags) are good candidts for this type of plugin.
-
-
-```go
-// Visitor is the interface for plugins that require a flat view of the config, like flags, env vars
-type Visitor interface {
-  Plugin
-
-  Visit(flat.Fields) error
-}
-
-```
-
-
-## File Plugin
-
-File plugin is a walker plugin that loads configuration files of different formats by way of accepting an Unmarshaler function that follows the standard unmarshal function of type `func(src []byte, v interface{}) error`; this allows you to use `encoding/json` and other encoders that follow the same interface. 
-
-Following is some common unmarshalers that follow the standard unmarshaler function:
-
-* JSON: `encoding/json`
-* TOML: `github.com/BurntSushi/toml`
-* YAML: `gopkg.in/yaml.v2`
-  * Note: YAML unmarshaller doesn't appear to handle embedded structs as cleanly as some unmarshallers; you may need to nest the embedded struct's options in your YAML file (see `version` in the example below)
-
-
-## Example
-
 The following example uses `uconfig.Classic` to create a uConfig manager which processes defaults, optionally any config files, environment variables, and flags; in that order.
 In this example, we're using a single YAML config file, but you can specify multiple files (each with its own unmarshaller) in the `uconfig.Files` map if required.
 
@@ -170,6 +119,21 @@ func main() {
 
 ```
 
+## File Plugin
+
+File plugin is a walker plugin that loads configuration files of different formats by way of accepting an Unmarshaler function that follows the standard unmarshal function of type `func(src []byte, v interface{}) error`; this allows you to use `encoding/json` and other encoders that follow the same interface. 
+
+Following is some common unmarshalers that follow the standard unmarshaler function:
+
+* JSON: `encoding/json`
+* TOML: `github.com/BurntSushi/toml`
+* YAML: `gopkg.in/yaml.v2`
+  * Note: YAML unmarshaller doesn't appear to handle embedded structs as cleanly as some unmarshallers; you may need to nest the embedded struct's options in your YAML file (see `version` in the example below)
+
+  
+  
+## Tests
+
 For tests, you may consider the `Must` function to set the defaults, like so
 ```go
 package something 
@@ -195,3 +159,40 @@ func TestSomething(t *testing.T) error {
 
 See the Classic source for how to compose plugins.  
 For more details, see the [godoc](https://godoc.org/github.com/omeid/uconfig).
+
+## Extending uConfig:
+
+uConfig provides a plugin mechanism for adding new sources of configuration.
+There are two kind of plugins, Walkers and Visitors.
+
+### Walkers 
+
+Walkers are used for configuration plugins that take the whole config struct and unmarshal the underlying content into the config struct.
+Plugins that load the configuration from files are good candidates for this.
+
+```go
+// Walker is the interface for plugins that take the whole config, like file loaders.
+type Walker interface {
+  Plugin
+
+  Walk(interface{}) error
+}
+```
+
+
+### Visitors
+
+Visitors get a _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ of the configuration struct, which is a flat view of the structs regardless of nesting level, for more details see the [flat](https://godoc.org/github.com/omeid/uconfig/flat) package documentation.
+
+Plugins that load the configurations from flat structures (e.g flags, environment variables, default tags) are good candidts for this type of plugin.
+
+
+```go
+// Visitor is the interface for plugins that require a flat view of the config, like flags, env vars
+type Visitor interface {
+  Plugin
+
+  Visit(flat.Fields) error
+}
+
+```
