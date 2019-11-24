@@ -1,8 +1,8 @@
 # uConfig [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/omeid/uconfig)  [![Build Status](https://travis-ci.org/omeid/uconfig.svg?branch=master)](https://travis-ci.org/omeid/uconfig) [![Go Report Card](https://goreportcard.com/badge/github.com/omeid/uconfig)](https://goreportcard.com/report/github.com/omeid/uconfig)
 
-uConfig is an unopinionated, extendable and plugable configuration management.
+Lightweight, zero-dependency, and extendable configuration management.
 
-Every aspect of configuration is provided through a plugin, which means you can have any combination of flags, environment variables, defaults, Kubernetes Downward API, and what you want, through plugins.
+uConfig is extremely light and extendable configuration management library with zero dependencies. Every aspect of configuration is provided through a plugin, which means you can have any combination of flags, environment variables, defaults, Kubernetes Downward API, and what you want, through plugins.
 
 
 uConfig takes the config schema as a struct decorated with tags, nesting is supported.

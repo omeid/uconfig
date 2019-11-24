@@ -28,7 +28,7 @@ type Field interface {
 }
 
 // View provides a flat view of the provided structs an array of fields.
-// sub-struct fiels are prefixed with the struct key (not type) followed by a dot,
+// sub-struct fields are prefixed with the struct key (not type) followed by a dot,
 // this is repeated for each nested level.
 func View(s interface{}) (Fields, error) {
 
