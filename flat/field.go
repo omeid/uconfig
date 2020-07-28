@@ -4,6 +4,7 @@ import (
 	"encoding"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -67,9 +68,15 @@ func (f *field) Set(value string) error {
 		return f.setUint(value)
 	case reflect.Float32, reflect.Float64:
 		return f.setFloat(value)
+	case reflect.Slice:
+		switch f.field.Type().Elem().Kind() {
+		case reflect.String:
+			return f.setStringSlice(value)
+
+			// Soon case reflect.Int:
+		}
 
 		// Soon case reflect.Map:
-		// Soon case reflect.Slice:
 
 		// Maybe case reflect.Func:
 		// Maybe case reflect.Array:
@@ -113,6 +120,13 @@ func (f *field) setDuration(value string) error {
 
 func (f *field) setString(value string) error {
 	f.field.SetString(value)
+	return nil
+}
+
+func (f *field) setStringSlice(value string) error {
+	parts := strings.Split(value, ",")
+
+	f.field.Set(reflect.ValueOf(parts))
 	return nil
 }
 
