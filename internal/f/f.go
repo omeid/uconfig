@@ -51,6 +51,6 @@ type Types struct {
 
 	// MapStringInt    map[string]int
 
-	// SliceString []string
+	SliceString []string
 	// SliceInt    []int
 }

@@ -66,7 +66,7 @@ func TestFlattenTypes(t *testing.T) {
 		// "Duration":        "5 second",
 		// "MapStringString": "a:aval,bbval",
 		// "MapStringInt":    "one:1,two:2",
-		// "SliceString":     "hello,world",
+		"SliceString": "hello,world",
 		// "SliceInt":        "1,2,3",
 	}
 
@@ -85,10 +85,11 @@ func TestFlattenTypes(t *testing.T) {
 		Uint64:  512,
 		Float32: 1.1,
 		Float64: 1.2,
+
 		// Duration:        time.Second * 5,
 		// MapStringString: map[string]string{"a": "aval", "b": "bval"},
 		// MapStringInt:    map[string]int{"one": 1, "two": 2},
-		// SliceString:     []string{"hello", "world"},
+		SliceString: []string{"hello", "world"},
 		// SliceInt:        []int{1, 2, 3},
 	}
 
