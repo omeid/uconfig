@@ -1,7 +1,11 @@
 // Package f provides simple test fixtures for uconfig.
 package f
 
-import "time"
+import (
+	"encoding"
+	"strings"
+	"time"
+)
 
 //Anon is part of text fixtures.
 type Anon struct {
@@ -34,6 +38,18 @@ type Config struct {
 	Rethink RethinkConfig
 }
 
+// TextUnmarshalerStringSlice is an example of encoding.TextUnmarshaler
+type TextUnmarshalerStringSlice []string
+
+// UnmarshalText is part of encoding.TextUnmarshaler
+func (l *TextUnmarshalerStringSlice) UnmarshalText(value []byte) error {
+	*l = strings.Split(string(value), ".")
+	return nil
+}
+
+// ensure the interfae is implemented properly.
+var _ encoding.TextUnmarshaler = &TextUnmarshalerStringSlice{}
+
 //Types is part of text fixtures.
 type Types struct {
 	String   string
@@ -59,4 +75,6 @@ type Types struct {
 	SliceInt32    []int
 	SliceFloat32  []float32
 	SliceDuration []time.Duration
+
+	SliceTextUnmarshaler *TextUnmarshalerStringSlice
 }

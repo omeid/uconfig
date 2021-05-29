@@ -69,19 +69,7 @@ func (f *field) Set(value string) error {
 	case reflect.Float32, reflect.Float64:
 		return f.setFloat(value)
 	case reflect.Slice:
-		switch f.field.Type().Elem().Kind() {
-		case reflect.String:
-			return f.setSliceString(value)
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			if f.field.Type().Elem().String() == "time.Duration" {
-				return f.setSlice(value, setSliceElmDuration)
-			}
-			return f.setSlice(value, setSliceElmInt)
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			return f.setSlice(value, setSliceElmUint)
-		case reflect.Float32, reflect.Float64:
-			return f.setSlice(value, setSliceElmFloat)
-		}
+		return f.setSlice(value)
 
 		// Soon case reflect.Map:
 
@@ -105,6 +93,7 @@ func (f *field) setUnmarshale(value []byte) error {
 	if f.field.IsNil() {
 		f.field.Set(reflect.New(f.field.Type().Elem()))
 	}
+
 	ut := f.field.MethodByName("UnmarshalText")
 
 	err := ut.Call([]reflect.Value{reflect.ValueOf(value)})[0]
@@ -130,58 +119,6 @@ func (f *field) setString(value string) error {
 	return nil
 }
 
-func (f *field) setSliceString(value string) error {
-	parts := strings.Split(value, ",")
-
-	f.field.Set(reflect.ValueOf(parts))
-	return nil
-}
-
-func (f *field) setSlice(value string, setter func(reflect.Value, string) error) error {
-	values := strings.Split(value, ",")
-
-	valuesLen := len(values)
-
-	f.field.Set(reflect.MakeSlice(f.field.Type(), valuesLen, valuesLen))
-
-	for i, value := range values {
-		err := setter(f.field.Index(i), strings.TrimSpace(value))
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func setSliceElmDuration(f reflect.Value, value string) error {
-	duration, err := time.ParseDuration(value)
-	if err != nil {
-		return err
-	}
-
-	f.SetInt(int64(duration))
-	return nil
-}
-
-func setSliceElmInt(f reflect.Value, value string) error {
-	v, err := strconv.ParseInt(value, 0, 64)
-	f.SetInt(v)
-	return err
-}
-
-func setSliceElmUint(f reflect.Value, value string) error {
-	v, err := strconv.ParseUint(value, 0, 64)
-	f.SetUint(v)
-	return err
-}
-
-func setSliceElmFloat(f reflect.Value, value string) error {
-	v, err := strconv.ParseFloat(value, 64)
-	f.SetFloat(v)
-	return err
-}
-
 func (f *field) setBool(value string) error {
 	v, err := strconv.ParseBool(value)
 	f.field.SetBool(v)
@@ -203,5 +140,85 @@ func (f *field) setUint(value string) error {
 func (f *field) setFloat(value string) error {
 	v, err := strconv.ParseFloat(value, 64)
 	f.field.SetFloat(v)
+	return err
+}
+
+func (f *field) setSlice(value string) error {
+
+	setter := setSliceElemSetter(f.field.Type().Elem())
+
+	if setter == nil {
+		return nil
+	}
+
+	values := strings.Split(value, ",")
+	valuesLen := len(values)
+
+	f.field.Set(reflect.MakeSlice(f.field.Type(), valuesLen, valuesLen))
+
+	for i, value := range values {
+		err := setter(f.field.Index(i), strings.TrimSpace(value))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func setSliceElemSetter(elem reflect.Type) func(reflect.Value, string) error {
+
+	switch elem.Kind() {
+
+	case reflect.String:
+		return setSliceElemString
+
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if elem.String() == "time.Duration" {
+			return setSliceElemDuration
+		}
+
+		return setSliceElemInt
+
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return setSliceElemUint
+
+	case reflect.Float32, reflect.Float64:
+		return setSliceElemFloat
+	}
+
+	return nil
+}
+
+func setSliceElemString(f reflect.Value, value string) error {
+	f.SetString(value)
+	return nil
+}
+
+func setSliceElemDuration(f reflect.Value, value string) error {
+	duration, err := time.ParseDuration(value)
+	if err != nil {
+		return err
+	}
+
+	f.SetInt(int64(duration))
+	return nil
+}
+
+func setSliceElemInt(f reflect.Value, value string) error {
+	v, err := strconv.ParseInt(value, 0, 64)
+	f.SetInt(v)
+	return err
+}
+
+func setSliceElemUint(f reflect.Value, value string) error {
+	v, err := strconv.ParseUint(value, 0, 64)
+	f.SetUint(v)
+	return err
+}
+
+func setSliceElemFloat(f reflect.Value, value string) error {
+	v, err := strconv.ParseFloat(value, 64)
+	f.SetFloat(v)
 	return err
 }

@@ -1,7 +1,6 @@
 package defaults_test
 
 import (
-	"strings"
 	"testing"
 	"time"
 
@@ -10,16 +9,9 @@ import (
 	"github.com/omeid/uconfig/plugins/defaults"
 )
 
-type list []string
-
-func (l *list) UnmarshalText(value []byte) error {
-	*l = strings.Split(string(value), ",")
-	return nil
-}
-
 type fDefaults struct {
 	Address string        `default:"https://blah.bleh"`
-	Bases   *list         `default:"list,blah"`
+	Bases   []string      `default:"list,blah"`
 	Timeout time.Duration `default:"5s"`
 }
 
@@ -27,7 +19,7 @@ func TestDefaultTag(t *testing.T) {
 
 	expect := fDefaults{
 		Address: "https://blah.bleh",
-		Bases:   &list{"list", "blah"},
+		Bases:   []string{"list", "blah"},
 		Timeout: 5 * time.Second,
 	}
 

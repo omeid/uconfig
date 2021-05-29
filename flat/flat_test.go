@@ -65,13 +65,17 @@ func TestFlattenTypes(t *testing.T) {
 		"Float32":  "1.1",
 		"Float64":  "1.2",
 		"Duration": "5s",
+
 		// "MapStringString": "a:aval,bbval",
 		// "MapStringInt":    "one:1,two:2",
+
 		"SliceString":   "hello,world",
 		"SliceInt":      "1, 2,3",
 		"SliceInt32":    "1,2, 3 ",
 		"SliceFloat32":  "1.2,3.4, 5.6",
 		"SliceDuration": "5s, 1h",
+
+		"SliceTextUnmarshaler": "a.b.c",
 	}
 
 	expect := f.Types{
@@ -99,6 +103,8 @@ func TestFlattenTypes(t *testing.T) {
 		SliceInt32:    []int{1, 2, 3},
 		SliceFloat32:  []float32{1.2, 3.4, 5.6},
 		SliceDuration: []time.Duration{5 * time.Second, 1 * time.Hour},
+
+		SliceTextUnmarshaler: &f.TextUnmarshalerStringSlice{"a", "b", "c"},
 	}
 
 	value := f.Types{}
