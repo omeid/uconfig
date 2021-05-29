@@ -102,20 +102,21 @@ func (c *config) Visitor(v Visitor) error {
 	if err != nil {
 		return err
 	}
-	c.plug(v)
+	c.addPlugin(v)
 
 	return nil
 }
+
 func (c *config) Walker(w Walker) error {
 	err := w.Walk(c.conf)
 	if err != nil {
 		return err
 	}
-	c.plug(w)
+	c.addPlugin(w)
 	return nil
 }
 
-func (c *config) plug(p Plugin) {
+func (c *config) addPlugin(p Plugin) {
 	c.plugins = append(c.plugins, p)
 }
 

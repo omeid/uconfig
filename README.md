@@ -7,7 +7,7 @@ uConfig is extremely light and extendable configuration management library with 
 
 uConfig takes the config schema as a struct decorated with tags, nesting is supported.
 
-Supports all basic types, time.Duration, time.Time, and you any other type through `encoding.TextUnmarshaler` interface.
+Supports all basic types, time.Duration, and you any other type through `encoding.TextUnmarshaler` interface.
 See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package for details.
 
 ## Example Configuration: 
@@ -25,10 +25,11 @@ type Config struct {
 package redis
 // Config describes the requirement for redis client.
 type Config struct {
-  Address  string `default:"redis-master" env:"REDIS_HOST"`
-  Port     string `default:"6379" env:"REDIS_SERVICE_PORT"`
-  Password string `default:""`
-  DB       int    `default:"0"`
+  Address  string        `default:"redis-master" env:"REDIS_HOST"`
+  Port     string        `default:"6379" env:"REDIS_SERVICE_PORT"`
+  Password string        `default:""`
+  DB       int           `default:"0"`
+  Expire   time.Duration `default:"5s"`
 }
 ```
 

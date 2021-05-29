@@ -2,6 +2,7 @@ package flat
 
 import (
 	"testing"
+	"time"
 
 	"github.com/go-test/deep"
 	"github.com/omeid/uconfig/internal/f"
@@ -49,48 +50,55 @@ func TestFlattenNested(t *testing.T) {
 
 func TestFlattenTypes(t *testing.T) {
 	values := map[string]string{
-		"String":  "string",
-		"Bool":    "true",
-		"Int":     "1",
-		"Int8":    "2",
-		"Int16":   "4",
-		"Int32":   "8",
-		"Int64":   "16",
-		"Uint":    "32",
-		"Uint8":   "64",
-		"Uint16":  "128",
-		"Uint32":  "256",
-		"Uint64":  "512",
-		"Float32": "1.1",
-		"Float64": "1.2",
-		// "Duration":        "5 second",
+		"String":   "string",
+		"Bool":     "true",
+		"Int":      "1",
+		"Int8":     "2",
+		"Int16":    "4",
+		"Int32":    "8",
+		"Int64":    "16",
+		"Uint":     "32",
+		"Uint8":    "64",
+		"Uint16":   "128",
+		"Uint32":   "256",
+		"Uint64":   "512",
+		"Float32":  "1.1",
+		"Float64":  "1.2",
+		"Duration": "5s",
 		// "MapStringString": "a:aval,bbval",
 		// "MapStringInt":    "one:1,two:2",
-		"SliceString": "hello,world",
-		// "SliceInt":        "1,2,3",
+		"SliceString":   "hello,world",
+		"SliceInt":      "1, 2,3",
+		"SliceInt32":    "1,2, 3 ",
+		"SliceFloat32":  "1.2,3.4, 5.6",
+		"SliceDuration": "5s, 1h",
 	}
 
 	expect := f.Types{
-		String:  "string",
-		Bool:    true,
-		Int:     1,
-		Int8:    2,
-		Int16:   4,
-		Int32:   8,
-		Int64:   16,
-		Uint:    32,
-		Uint8:   64,
-		Uint16:  128,
-		Uint32:  256,
-		Uint64:  512,
-		Float32: 1.1,
-		Float64: 1.2,
+		String:   "string",
+		Bool:     true,
+		Int:      1,
+		Int8:     2,
+		Int16:    4,
+		Int32:    8,
+		Int64:    16,
+		Uint:     32,
+		Uint8:    64,
+		Uint16:   128,
+		Uint32:   256,
+		Uint64:   512,
+		Float32:  1.1,
+		Float64:  1.2,
+		Duration: time.Duration(5 * time.Second),
 
 		// Duration:        time.Second * 5,
 		// MapStringString: map[string]string{"a": "aval", "b": "bval"},
 		// MapStringInt:    map[string]int{"one": 1, "two": 2},
-		SliceString: []string{"hello", "world"},
-		// SliceInt:        []int{1, 2, 3},
+		SliceString:   []string{"hello", "world"},
+		SliceInt:      []int{1, 2, 3},
+		SliceInt32:    []int{1, 2, 3},
+		SliceFloat32:  []float32{1.2, 3.4, 5.6},
+		SliceDuration: []time.Duration{5 * time.Second, 1 * time.Hour},
 	}
 
 	value := f.Types{}
