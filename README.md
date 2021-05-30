@@ -2,12 +2,12 @@
 
 Lightweight, zero-dependency, and extendable configuration management.
 
-uConfig is extremely light and extendable configuration management library with zero dependencies. Every aspect of configuration is provided through a plugin, which means you can have any combination of flags, environment variables, defaults, Kubernetes Downward API, and what you want, through plugins.
+uConfig is extremely light and extendable configuration management library with zero dependencies. Every aspect of configuration is provided through a _plugin_, which means you can have any combination of flags, environment variables, defaults, secret providers, Kubernetes Downward API, and what you want, and only what you want, through plugins.
 
 
 uConfig takes the config schema as a struct decorated with tags, nesting is supported.
 
-Supports all basic types, time.Duration, and you any other type through `encoding.TextUnmarshaler` interface.
+Supports all basic types, time.Duration, and any other type through `encoding.TextUnmarshaler` interface.
 See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package for details.
 
 ## Example Configuration: 
@@ -111,6 +111,9 @@ func main() {
   c, err := uconfig.Classic(conf, uconfig.Files{
     "path/to/config.yaml": yaml.Unmarshal,
   })
+
+  // or alternatively, using your own combination of plugins
+
   if err != nil {
     c.Usage()
     os.Exit(1)
@@ -120,7 +123,55 @@ func main() {
 
 ```
 
-## File Plugin
+## Secrets Plugin
+
+The secret provider allows you to grab the value of a config from anywhere you want. You simply need to implement the `func(name string) (value string)` function and pass it to the secrets plugin.
+
+
+```
+	func SecretProvider(name string) (string, error) {
+    // you're free to grab the secret based on the name
+    // from wherever you please, aws secrets manager, hashicorp vault
+    // or wherever.
+    
+    value, ok := secretSource.Get(name)
+    
+    if !ok {
+      return "", ErrSecretNotFound
+    }
+    
+    return value, nil
+	}
+  
+	//Config is part of text fixtures.
+	type Creds struct {
+    // by default, secret plugin will generate a name that is indentical
+    // to env plugin, SCREAM_SNAKE_CASE, so in this case it will be
+    // CREDS_APIKEY
+		APIKey   string `secret:""`
+    // or you can provide your own name
+		APIToken string `secret:"API_TOKEN"`
+	}
+
+	type Config struct {
+		Redis   Redis
+		Creds   Creds
+	}
+  
+	files := uconfig.Files{"config.json": json.Unmarshal}
+
+	conf := &Config{}
+
+
+	_, err := uconfig.Classic(&value, files, secret.New(SecretProvider))
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+```
+
+
+## File Plugin 
 
 File plugin is a walker plugin that loads configuration files of different formats by way of accepting an Unmarshaler function that follows the standard unmarshal function of type `func(src []byte, v interface{}) error`; this allows you to use `encoding/json` and other encoders that follow the same interface. 
 
@@ -129,7 +180,7 @@ Following is some common unmarshalers that follow the standard unmarshaler funct
 * JSON: `encoding/json`
 * TOML: `github.com/BurntSushi/toml`
 * YAML: `gopkg.in/yaml.v2`
-  * Note: YAML unmarshaller doesn't appear to handle embedded structs as cleanly as some unmarshallers; you may need to nest the embedded struct's options in your YAML file (see `version` in the example below)
+  * Note: YAML unmarshaller doesn't appear to handle embedded structs as cleanly as some unmarshallers; you may need to nest the embedded struct's options in your YAML file (see `version` in the example above)
 
   
   
@@ -137,7 +188,7 @@ Following is some common unmarshalers that follow the standard unmarshaler funct
 
 For tests, you may consider the `Must` function to set the defaults, like so
 ```go
-package something 
+package something
 
 import (
   "testing"
@@ -185,7 +236,7 @@ type Walker interface {
 
 Visitors get a _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ of the configuration struct, which is a flat view of the structs regardless of nesting level, for more details see the [flat](https://godoc.org/github.com/omeid/uconfig/flat) package documentation.
 
-Plugins that load the configurations from flat structures (e.g flags, environment variables, default tags) are good candidts for this type of plugin.
+Plugins that load the configurations from flat structures (e.g flags, environment variables, default tags) are good candidates for this type of plugin.
 
 
 ```go

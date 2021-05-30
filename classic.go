@@ -1,6 +1,7 @@
 package uconfig
 
 import (
+	"github.com/omeid/uconfig/plugins"
 	"github.com/omeid/uconfig/plugins/defaults"
 	"github.com/omeid/uconfig/plugins/env"
 	"github.com/omeid/uconfig/plugins/file"
@@ -8,35 +9,30 @@ import (
 )
 
 // Files represents a set of file paths and the appropriate
-// unmarshal function for the given file.
-type Files map[string]file.Unmarshal
+type Files = file.Files
 
 // Classic creates a uconfig manager with defaults,environment variables,
 // and flags (in that order) and optionally file loaders based on the provided
 // Files map and parses them right away.
-func Classic(conf interface{}, files Files) (Config, error) {
-	c, err := New(conf,
-		defaults.New(),
-	)
+func Classic(conf interface{}, files Files, userPlugins ...plugins.Plugin) (Config, error) {
+
+	fps := files.Plugins()
+
+	ps := make([]plugins.Plugin, 0, len(fps)+3+len(userPlugins))
+
+	// first defaults
+	ps = append(ps, defaults.New())
+	// then files
+	ps = append(ps, fps...)
+	// followed by env and flags
+	ps = append(ps, env.New(), flag.Standard())
+	// then any user pugins, often just _secret_.
+	ps = append(ps, userPlugins...)
+
+	c, err := New(conf, ps...)
 
 	if err != nil {
 		return nil, err
-	}
-
-	for path, unmarshal := range files {
-		err = c.Walker(file.New(path, unmarshal))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err = c.Visitor(env.New())
-	if err != nil {
-		return nil, err
-	}
-	err = c.Visitor(flag.Standard())
-	if err != nil {
-		return c, err
 	}
 	return c, c.Parse()
 }

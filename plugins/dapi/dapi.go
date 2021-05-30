@@ -8,18 +8,17 @@ import (
 
 	"github.com/go-ini/ini"
 	"github.com/omeid/uconfig/flat"
+	"github.com/omeid/uconfig/plugins"
 )
 
 const tag = "dapi"
 
-// DAPI plugin for uconfig
-type DAPI interface {
-	Visit(flat.Fields) error
-	Parse() error
+func init() {
+	plugins.RegisterTag(tag)
 }
 
-// New returns DAPI plugin for uConfig that will load ini files from the provided base location. Please note that DAPI only works with explicitly tagged fields, the tags are in the form `dapi:"file_name:attribute"` where file_name is a file under base and attribute is the key expected in base/file_name.
-func New(base string) DAPI {
+// New returns DAPI provider for uConfig that will load ini files from the provided base location. Please note that DAPI only works with explicitly tagged fields, the tags are in the form `dapi:"file_name:attribute"` where file_name is a file under base and attribute is the key expected in base/file_name.
+func New(base string) plugins.Provider {
 	return &visitor{
 		base: base,
 	}

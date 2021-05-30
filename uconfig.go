@@ -5,51 +5,31 @@ import (
 	"fmt"
 
 	"github.com/omeid/uconfig/flat"
+	"github.com/omeid/uconfig/plugins"
 )
-
-// Plugin is the common interface for all plugins.
-type Plugin interface {
-	Parse() error
-}
-
-// Walker is the interface for plugins that take the whole
-// config, like file loaders.
-type Walker interface {
-	Plugin
-
-	Walk(interface{}) error
-}
-
-// Visitor is the interface for plugins that require a flat view
-// of the config, like flags, env vars
-type Visitor interface {
-	Plugin
-
-	Visit(flat.Fields) error
-}
 
 // Config is the config manager.
 type Config interface {
-	// Visitor adds a visitor plugin, Config invokes the plugins Visit method
+	// Visitor adds a visitor plugins, Config invokes the plugins Visit method
 	// right away with a flat view of the underlying config struct.
-	Visitor(Visitor) error
-	// Walker adds a walker plugin, Config invokes the plugins Walk method
+	Visitor(plugins.Visitor) error
+	// Walker adds a walker plugins, Config invokes the plugins Walk method
 	// right away with the underlying config struct.
-	Walker(Walker) error
+	Walker(plugins.Walker) error
 
 	// Must be called after Visitor and Walkers are added.
-	// Parse will call the parse method of all the added plugins in the order
-	// that the plugins were registered, it will return early as soon as any
-	// plugin fails.
+	// Parse will call the parse method of all the added pluginss in the order
+	// that the pluginss were registered, it will return early as soon as any
+	// plugins fails.
 	Parse() error
 
 	// Usage provides a simple usage message based on the meta data registered
-	// by the plugins.
+	// by the pluginss.
 	Usage()
 }
 
 // New returns a new Config. The conf must be a pointer to a struct.
-func New(conf interface{}, plugins ...Plugin) (Config, error) {
+func New(conf interface{}, ps ...plugins.Plugin) (Config, error) {
 	fields, err := flat.View(conf)
 	if err != nil {
 		return nil, err
@@ -60,21 +40,21 @@ func New(conf interface{}, plugins ...Plugin) (Config, error) {
 		fields: fields,
 	}
 
-	for _, plugin := range plugins {
-		switch plugin := plugin.(type) {
-		case Visitor:
-			err := c.Visitor(plugin)
+	for _, plug := range ps {
+		switch plug := plug.(type) {
+		case plugins.Visitor:
+			err := c.Visitor(plug)
 			if err != nil {
 				return c, err
 			}
 
-		case Walker:
-			err := c.Walker(plugin)
+		case plugins.Walker:
+			err := c.Walker(plug)
 			if err != nil {
 				return c, err
 			}
 		default:
-			return nil, fmt.Errorf("Unsupported Plugin. Expecting a Walker or Visitor")
+			return nil, fmt.Errorf("Unsupported plugins. Expecting a Walker or Visitor")
 		}
 	}
 
@@ -82,7 +62,7 @@ func New(conf interface{}, plugins ...Plugin) (Config, error) {
 }
 
 type config struct {
-	plugins []Plugin
+	plugins []plugins.Plugin
 	conf    interface{}
 	fields  flat.Fields
 }
@@ -91,7 +71,7 @@ type canSetUsage interface {
 	SetUsage(func())
 }
 
-func (c *config) Visitor(v Visitor) error {
+func (c *config) Visitor(v plugins.Visitor) error {
 
 	// disable the std flag usage
 	if v, ok := v.(canSetUsage); ok {
@@ -107,7 +87,7 @@ func (c *config) Visitor(v Visitor) error {
 	return nil
 }
 
-func (c *config) Walker(w Walker) error {
+func (c *config) Walker(w plugins.Walker) error {
 	err := w.Walk(c.conf)
 	if err != nil {
 		return err
@@ -116,7 +96,7 @@ func (c *config) Walker(w Walker) error {
 	return nil
 }
 
-func (c *config) addPlugin(p Plugin) {
+func (c *config) addPlugin(p plugins.Plugin) {
 	c.plugins = append(c.plugins, p)
 }
 

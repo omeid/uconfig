@@ -1,0 +1,15 @@
+{
+  "Version": "0.2",
+  "GoHard": true,
+  "Redis": {
+    "Host": "redis-host",
+    "Port": 6379
+  },
+  "Rethink": {
+    "Db": "base",
+    "Host": {
+      "Address": "rethink-cluster",
+      "Port": "28015"
+    }
+  }
+}

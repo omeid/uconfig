@@ -7,17 +7,13 @@ import (
 	"strings"
 
 	"github.com/omeid/uconfig/flat"
+	"github.com/omeid/uconfig/plugins"
 )
 
 const tag = "flag"
 
-// Flags is it
-type Flags interface {
-	Visit(f flat.Fields) error
-
-	Parse() error
-
-	SetUsage(fn func())
+func init() {
+	plugins.RegisterTag(tag)
 }
 
 // ErrorHandling defines how FlagSet.Parse behaves if the parse fails.
@@ -31,7 +27,7 @@ const (
 )
 
 // New returns a new Flags
-func New(name string, errorHandling ErrorHandling, args []string) Flags {
+func New(name string, errorHandling ErrorHandling, args []string) plugins.Visitor {
 	return &visitor{
 		fs:   flag.NewFlagSet(name, flag.ErrorHandling(errorHandling)),
 		args: args,
@@ -40,11 +36,11 @@ func New(name string, errorHandling ErrorHandling, args []string) Flags {
 
 // Standard returns a set of flags configured in the common way.
 // It is same as: `New(os.Args[0], ContinueOnError, os.Args[1:])`
-func Standard() Flags {
-	return New(os.Args[0], ContinueOnError, os.Args[1:])
+func Standard() plugins.Plugin {
+	return New(os.Args[0], PanicOnError, os.Args[1:])
 }
 
-var _ Flags = (*visitor)(nil)
+var _ plugins.Visitor = (*visitor)(nil)
 
 type visitor struct {
 	fs   *flag.FlagSet
@@ -79,6 +75,7 @@ func (v *visitor) Visit(fields flat.Fields) error {
 
 }
 
+// allows uconfig to disable the setusage usage.
 func (v *visitor) SetUsage(usage func()) {
 	v.fs.Usage = usage
 }

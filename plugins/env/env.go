@@ -6,19 +6,17 @@ import (
 	"strings"
 
 	"github.com/omeid/uconfig/flat"
+	"github.com/omeid/uconfig/plugins"
 )
 
 const tag = "env"
 
-// Envs is an env variable plugin.
-type Envs interface {
-	Visit(flat.Fields) error
-
-	Parse() error
+func init() {
+	plugins.RegisterTag(tag)
 }
 
 // New returns an EnvSet.
-func New() Envs {
+func New() plugins.Visitor {
 	return &visitor{}
 }
 
@@ -38,15 +36,12 @@ func (v *visitor) Visit(f flat.Fields) error {
 
 	for _, f := range v.fields {
 		name, ok := f.Tag(tag)
-		if name == "-" {
-			continue
-		}
 
 		if !ok || name == "" {
 			name = makeEnvName(f.Name())
 		}
 
-		f.Meta()[tag] = "$" + name
+		f.Meta()[tag] = name
 	}
 
 	return nil
@@ -55,18 +50,11 @@ func (v *visitor) Visit(f flat.Fields) error {
 func (v *visitor) Parse() error {
 
 	for _, f := range v.fields {
-		// Next block could use field.Meta and grab the tag name.
-		/* start */
-		name, ok := f.Tag(tag)
-		if name == "-" {
+		name, ok := f.Meta()[tag]
+		if !ok || name == "-" {
 			continue
 		}
 
-		if !ok || name == "" {
-			name = makeEnvName(f.Name())
-		}
-
-		/* end */
 		value := os.Getenv(name)
 
 		if value == "" {
