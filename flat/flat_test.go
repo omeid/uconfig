@@ -1,17 +1,18 @@
-package flat
+package flat_test
 
 import (
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/internal/f"
 )
 
 func TestFlattenNested(t *testing.T) {
 
 	conf := f.Config{}
-	fs, err := View(&conf)
+	fs, err := flat.View(&conf)
 
 	if err != nil {
 		t.Fatal(err)
@@ -72,6 +73,7 @@ func TestFlattenTypes(t *testing.T) {
 		"SliceString":   "hello,world",
 		"SliceInt":      "1, 2,3",
 		"SliceInt32":    "1,2, 3 ",
+		"SliceUint":     "1, 2,3",
 		"SliceFloat32":  "1.2,3.4, 5.6",
 		"SliceDuration": "5s, 1h",
 
@@ -101,6 +103,7 @@ func TestFlattenTypes(t *testing.T) {
 		SliceString:   []string{"hello", "world"},
 		SliceInt:      []int{1, 2, 3},
 		SliceInt32:    []int{1, 2, 3},
+		SliceUint:     []uint{1, 2, 3},
 		SliceFloat32:  []float32{1.2, 3.4, 5.6},
 		SliceDuration: []time.Duration{5 * time.Second, 1 * time.Hour},
 
@@ -111,7 +114,7 @@ func TestFlattenTypes(t *testing.T) {
 
 	_ = values
 
-	fs, err := View(&value)
+	fs, err := flat.View(&value)
 
 	if err != nil {
 		t.Fatal(err)

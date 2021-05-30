@@ -1,0 +1,8 @@
+{
+  "Version": "0.2",
+  "GoHard": true,
+  "Redis": {
+    "Host": "redis-host",
+    "Port": 6379
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "Rethink": {
+    "Db": "base",
+    "Host": {
+      "Address": "rethink-cluster",
+      "Port": "28015"
+    }
+  }
+}

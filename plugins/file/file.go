@@ -58,12 +58,19 @@ type walker struct {
 }
 
 func (v *walker) Walk(conf interface{}) error {
-	v.conf = conf
+	if v.err != nil {
+		return v.err
+	}
 
+	v.conf = conf
 	return v.err
 }
 
 func (v *walker) Parse() error {
+
+	if v.err != nil {
+		return v.err
+	}
 
 	src, err := ioutil.ReadAll(v.src)
 	if err != nil {
@@ -71,7 +78,10 @@ func (v *walker) Parse() error {
 	}
 
 	if closer, ok := v.src.(io.Closer); ok {
-		closer.Close()
+		err := closer.Close()
+		if err != nil {
+			return err
+		}
 	}
 
 	return v.unmarshal(src, v.conf)

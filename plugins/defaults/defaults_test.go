@@ -13,6 +13,7 @@ type fDefaults struct {
 	Address string        `default:"https://blah.bleh"`
 	Bases   []string      `default:"list,blah"`
 	Timeout time.Duration `default:"5s"`
+	Ignored string
 }
 
 func TestDefaultTag(t *testing.T) {
@@ -21,9 +22,10 @@ func TestDefaultTag(t *testing.T) {
 		Address: "https://blah.bleh",
 		Bases:   []string{"list", "blah"},
 		Timeout: 5 * time.Second,
+		Ignored: "not-empty",
 	}
 
-	value := fDefaults{}
+	value := fDefaults{Ignored: "not-empty"}
 
 	conf, err := uconfig.New(&value)
 	if err != nil {

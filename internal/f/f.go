@@ -73,6 +73,7 @@ type Types struct {
 	SliceString   []string
 	SliceInt      []int
 	SliceInt32    []int
+	SliceUint     []uint
 	SliceFloat32  []float32
 	SliceDuration []time.Duration
 
