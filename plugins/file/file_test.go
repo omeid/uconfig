@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/go-test/deep"
+	"github.com/google/go-cmp/cmp"
 	"github.com/omeid/uconfig"
 	"github.com/omeid/uconfig/internal/f"
 	"github.com/omeid/uconfig/plugins/file"
@@ -83,7 +83,7 @@ func TestFileBasic(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if diff := deep.Equal(expect, value); diff != nil {
+		if diff := cmp.Diff(expect, value); diff != "" {
 			t.Error(diff)
 		}
 

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-test/deep"
+	"github.com/google/go-cmp/cmp"
 	"github.com/omeid/uconfig/internal/f"
 )
 
@@ -131,7 +131,7 @@ func TestFlattenTypes(t *testing.T) {
 		}
 	}
 
-	if diff := deep.Equal(expect, value); diff != nil {
+	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
 
