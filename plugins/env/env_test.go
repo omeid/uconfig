@@ -19,7 +19,7 @@ func TestEnvBasic(t *testing.T) {
 		"REDIS_PORT":           "6379",
 		"RETHINK_HOST_ADDRESS": "rethink-cluster",
 		"RETHINK_HOST_PORT":    "28015",
-		"RETHINK_DB":           "base",
+		"RETHINK_DB":           "",
 	}
 
 	expect := f.Config{
@@ -39,7 +39,7 @@ func TestEnvBasic(t *testing.T) {
 				Address: "rethink-cluster",
 				Port:    "28015",
 			},
-			Db: "base",
+			Db: "",
 		},
 	}
 
@@ -47,7 +47,7 @@ func TestEnvBasic(t *testing.T) {
 		os.Setenv(key, value)
 	}
 
-	value := f.Config{}
+	value := f.Config{Rethink: f.RethinkConfig{Db: "must-be-override-by-empty-env"}}
 
 	conf, err := uconfig.New(&value)
 	if err != nil {

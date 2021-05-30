@@ -55,11 +55,12 @@ func (v *visitor) Parse() error {
 			continue
 		}
 
-		value := os.Getenv(name)
+		value, ok := os.LookupEnv(name)
 
-		if value == "" {
+		if !ok {
 			continue
 		}
+
 		err := f.Set(value)
 		if err != nil {
 			return err
