@@ -27,7 +27,7 @@ package redis
 type Config struct {
   Address  string        `default:"redis-master" env:"REDIS_HOST"`
   Port     string        `default:"6379" env:"REDIS_SERVICE_PORT"`
-  Password string        `default:""`
+  Password string        `secret:""`
   DB       int           `default:"0"`
   Expire   time.Duration `default:"5s"`
 }
@@ -73,7 +73,6 @@ import (
   "os"
 
   "gopkg.in/yaml.v2"
-
   "github.com/omeid/uconfig"
 )
 
@@ -113,6 +112,7 @@ func main() {
   })
 
   // or alternatively, using your own combination of plugins
+  // see uconfig.Classic function for an example.
 
   if err != nil {
     c.Usage()
@@ -124,54 +124,61 @@ func main() {
 ```
 
 ## Secrets Plugin
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/omeid/uconfig/plugins/secret)
 
 The secret provider allows you to grab the value of a config from anywhere you want. You simply need to implement the `func(name string) (value string)` function and pass it to the secrets plugin.
 
 
-```
-	func SecretProvider(name string) (string, error) {
-    // you're free to grab the secret based on the name
-    // from wherever you please, aws secrets manager, hashicorp vault
-    // or wherever.
-    
-    value, ok := secretSource.Get(name)
-    
-    if !ok {
-      return "", ErrSecretNotFound
-    }
-    
-    return value, nil
-	}
-  
-	//Config is part of text fixtures.
-	type Creds struct {
-    // by default, secret plugin will generate a name that is indentical
+```go
+
+  // Creds is an example of a config struct that uses secret values.
+  type Creds struct {
+    // by default, secret plugin will generate a name that is identical
     // to env plugin, SCREAM_SNAKE_CASE, so in this case it will be
-    // CREDS_APIKEY
-		APIKey   string `secret:""`
-    // or you can provide your own name
-		APIToken string `secret:"API_TOKEN"`
-	}
+    // APIKEY however, following the standard uConfig nesting rules
+    // in Config struct below, it becomes CREDS_APIKEY.
+    APIKey   string `secret:""`
+    // or you can provide your own name, which will not be impacted
+    // by nesting or the field name.
+    APIToken string `secret:"API_TOKEN"`
+  }
 
-	type Config struct {
-		Redis   Redis
-		Creds   Creds
-	}
-  
-	files := uconfig.Files{"config.json": json.Unmarshal}
-
-	conf := &Config{}
+  type Config struct {
+    Redis   Redis
+    Creds   Creds
+  }
 
 
-	_, err := uconfig.Classic(&value, files, secret.New(SecretProvider))
-	if err != nil {
-		t.Fatal(err)
-	}
-}
+  conf := &Config{}
+
+
+   // secret.New accepts a function that maps a secret name to it's value.
+   secretPlugin := secret.New(func(name string) (string, error) {
+      // you're free to grab the secret based on the name from wherever
+      // you please, aws secrets-manager, hashicorp vault, or wherever.
+      value, ok := secretSource.Get(name)
+
+      if !ok {
+        return "", ErrSecretNotFound
+      }
+
+      return value, nil
+  })
+
+  // then you can use the secretPlugin with uConfig like any other plugin.
+  // Lucky, uconfig.Classic allows passing more plugins, which means
+  // you can simply do the following for flags, envs, files, and secrets!
+  files := uconfig.Files{"config.json": json.Unmarshal}
+  _, err := uconfig.Classic(&value, files, secretPlugin)
+  if err != nil {
+    t.Fatal(err)
+  }
 ```
 
 
 ## File Plugin 
+
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/omeid/uconfig/plugins/file)
 
 File plugin is a walker plugin that loads configuration files of different formats by way of accepting an Unmarshaler function that follows the standard unmarshal function of type `func(src []byte, v interface{}) error`; this allows you to use `encoding/json` and other encoders that follow the same interface. 
 
@@ -209,7 +216,7 @@ func TestSomething(t *testing.T) error {
 
 ```
 
-See the Classic source for how to compose plugins.  
+See the Classic source for how to compose plugins.
 For more details, see the [godoc](https://godoc.org/github.com/omeid/uconfig).
 
 ## Extending uConfig:

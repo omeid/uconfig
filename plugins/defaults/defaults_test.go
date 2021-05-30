@@ -30,7 +30,7 @@ func TestDefaultTag(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = conf.Visitor(defaults.New())
+	err = conf.AddPlugin(defaults.New())
 	if err != nil {
 		t.Fatal(err)
 	}

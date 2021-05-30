@@ -10,12 +10,8 @@ import (
 
 // Config is the config manager.
 type Config interface {
-	// Visitor adds a visitor plugins, Config invokes the plugins Visit method
-	// right away with a flat view of the underlying config struct.
-	Visitor(plugins.Visitor) error
-	// Walker adds a walker plugins, Config invokes the plugins Walk method
-	// right away with the underlying config struct.
-	Walker(plugins.Walker) error
+	// AddPlugin adds a Visitor or Walker plugin to the config.
+	AddPlugin(plugins.Plugin) error
 
 	// Must be called after Visitor and Walkers are added.
 	// Parse will call the parse method of all the added pluginss in the order
@@ -41,20 +37,10 @@ func New(conf interface{}, ps ...plugins.Plugin) (Config, error) {
 	}
 
 	for _, plug := range ps {
-		switch plug := plug.(type) {
-		case plugins.Visitor:
-			err := c.Visitor(plug)
-			if err != nil {
-				return c, err
-			}
 
-		case plugins.Walker:
-			err := c.Walker(plug)
-			if err != nil {
-				return c, err
-			}
-		default:
-			return nil, fmt.Errorf("Unsupported plugins. Expecting a Walker or Visitor")
+		err := c.AddPlugin(plug)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -71,33 +57,32 @@ type canSetUsage interface {
 	SetUsage(func())
 }
 
-func (c *config) Visitor(v plugins.Visitor) error {
+func (c *config) AddPlugin(plug plugins.Plugin) error {
+	switch plug := plug.(type) {
 
-	// disable the std flag usage
-	if v, ok := v.(canSetUsage); ok {
-		v.SetUsage(func() {})
+	case plugins.Visitor:
+		// disable the std flag usage
+		if plug, ok := plug.(canSetUsage); ok {
+			plug.SetUsage(func() {})
+		}
+
+		err := plug.Visit(c.fields)
+		if err != nil {
+			return err
+		}
+
+	case plugins.Walker:
+		err := plug.Walk(c.conf)
+		if err != nil {
+			return err
+		}
+
+	default:
+		return fmt.Errorf("Unsupported plugins. Expecting a Walker or Visitor")
 	}
 
-	err := v.Visit(c.fields)
-	if err != nil {
-		return err
-	}
-	c.addPlugin(v)
-
+	c.plugins = append(c.plugins, plug)
 	return nil
-}
-
-func (c *config) Walker(w plugins.Walker) error {
-	err := w.Walk(c.conf)
-	if err != nil {
-		return err
-	}
-	c.addPlugin(w)
-	return nil
-}
-
-func (c *config) addPlugin(p plugins.Plugin) {
-	c.plugins = append(c.plugins, p)
 }
 
 func (c *config) Parse() error {

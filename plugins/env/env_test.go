@@ -54,7 +54,7 @@ func TestEnvBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = conf.Visitor(env.New())
+	err = conf.AddPlugin(env.New())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestEnvTag(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = conf.Visitor(env.New())
+	err = conf.AddPlugin(env.New())
 	if err != nil {
 		t.Fatal(err)
 	}

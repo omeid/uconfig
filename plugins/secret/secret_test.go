@@ -54,7 +54,7 @@ func TestDefaultTag(t *testing.T) {
 		return secret, nil
 	}
 
-	err = conf.Visitor(secret.New(source))
+	err = conf.AddPlugin(secret.New(source))
 	if err != nil {
 		t.Fatal(err)
 	}

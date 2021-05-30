@@ -51,7 +51,7 @@ func TestFlagBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = conf.Visitor(fs)
+	err = conf.AddPlugin(fs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func TestFlagTag(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = conf.Visitor(fs)
+	err = conf.AddPlugin(fs)
 	if err != nil {
 		t.Fatal(err)
 	}

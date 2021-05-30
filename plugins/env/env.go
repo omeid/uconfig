@@ -16,7 +16,7 @@ func init() {
 }
 
 // New returns an EnvSet.
-func New() plugins.Visitor {
+func New() plugins.Plugin {
 	return &visitor{}
 }
 

@@ -72,7 +72,7 @@ func TestFileBasic(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = conf.Walker(file.NewReader(tc.Source, tc.Unmarshall))
+		err = conf.AddPlugin(file.NewReader(tc.Source, tc.Unmarshall))
 		if err != nil {
 			t.Fatal(err)
 		}

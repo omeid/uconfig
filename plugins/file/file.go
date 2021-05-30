@@ -31,7 +31,7 @@ type Unmarshal func(src []byte, v interface{}) error
 // NewReader returns a uconfig plugin that unmarshals the content of
 // the provided io.Reader into the config using the provided unmarshal
 // function. The src will be closed if it is an io.Closer.
-func NewReader(src io.Reader, unmarshal Unmarshal) plugins.Walker {
+func NewReader(src io.Reader, unmarshal Unmarshal) plugins.Plugin {
 	return &walker{
 		src:       src,
 		unmarshal: unmarshal,
@@ -40,7 +40,7 @@ func NewReader(src io.Reader, unmarshal Unmarshal) plugins.Walker {
 }
 
 // New returns an EnvSet.
-func New(path string, unmarshal Unmarshal) plugins.Walker {
+func New(path string, unmarshal Unmarshal) plugins.Plugin {
 	src, err := os.Open(path)
 	return &walker{
 		src:       src,

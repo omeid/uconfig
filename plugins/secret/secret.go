@@ -18,7 +18,7 @@ func init() {
 type Sourcer func(string) (string, error)
 
 // New returns the secret provider.
-func New(source Sourcer) plugins.Visitor {
+func New(source Sourcer) plugins.Plugin {
 	return &secret{source: source}
 }
 
