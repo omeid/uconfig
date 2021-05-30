@@ -8,7 +8,7 @@ import (
 	"github.com/omeid/uconfig/plugins/flag"
 )
 
-// Files represents a set of file paths and the appropriate
+// Files represents a set of file paths and the appropriate unmarshaller function.
 type Files = file.Files
 
 // Classic creates a uconfig manager with defaults,environment variables,

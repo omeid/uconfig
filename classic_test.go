@@ -17,9 +17,6 @@ func TestMain(m *testing.M) {
 	// for go test framework.
 	flag.Parse()
 
-	// patch the os.Args. for our tests.
-	os.Args = append(os.Args[:1], "--redis-host=redis-host")
-
 	os.Exit(m.Run())
 }
 
@@ -27,13 +24,13 @@ func TestClassicBasic(t *testing.T) {
 
 	expect := f.Config{
 		Anon: f.Anon{
-			Version: "0.2",
+			Version: "from-flags",
 		},
 
 		GoHard: true,
 
 		Redis: f.Redis{
-			Host: "redis-host",
+			Host: "from-envs",
 			Port: 6379,
 		},
 
@@ -49,6 +46,12 @@ func TestClassicBasic(t *testing.T) {
 	files := uconfig.Files{"testdata/classic.json": json.Unmarshal}
 
 	value := f.Config{}
+
+	// set some env vars to test env var and plugin orders.
+	os.Setenv("VERSION", "bad-value-overrided-with-flags")
+	os.Setenv("REDIS_HOST", "from-envs")
+	// patch the os.Args. for our tests.
+	os.Args = append(os.Args[:1], "-version=from-flags")
 
 	_, err := uconfig.Classic(&value, files)
 	if err != nil {
@@ -109,6 +112,10 @@ func TestClassicWithSecret(t *testing.T) {
 
 		return "", fmt.Errorf("Secret not found %s", name)
 	}
+
+	// patch the os.Args. for our tests.
+	os.Args = os.Args[:1]
+	os.Unsetenv("REDIS_HOST")
 
 	_, err := uconfig.Classic(&value, files, secret.New(SecretProvider))
 	if err != nil {
