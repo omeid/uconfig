@@ -46,12 +46,7 @@ func TestFlagBasic(t *testing.T) {
 
 	fs := flag.New("testing", flag.PanicOnError, args)
 
-	conf, err := uconfig.New(&value)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.AddPlugin(fs)
+	conf, err := uconfig.New(&value, fs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,12 +81,7 @@ func TestFlagTag(t *testing.T) {
 
 	fs := flag.New("testing", flag.PanicOnError, args)
 
-	conf, err := uconfig.New(&value)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.AddPlugin(fs)
+	conf, err := uconfig.New(&value, fs)
 	if err != nil {
 		t.Fatal(err)
 	}

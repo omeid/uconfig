@@ -10,13 +10,10 @@ import (
 
 // Config is the config manager.
 type Config interface {
-	// AddPlugin adds a Visitor or Walker plugin to the config.
-	AddPlugin(plugins.Plugin) error
-
-	// Must be called after Visitor and Walkers are added.
 	// Parse will call the parse method of all the added pluginss in the order
 	// that the pluginss were registered, it will return early as soon as any
 	// plugins fails.
+	// You must call this before using the config value.
 	Parse() error
 
 	// Usage provides a simple usage message based on the meta data registered
@@ -29,8 +26,9 @@ func New(conf interface{}, ps ...plugins.Plugin) (Config, error) {
 	fields, err := flat.View(conf)
 
 	c := &config{
-		conf:   conf,
-		fields: fields,
+		conf:    conf,
+		fields:  fields,
+		plugins: make([]plugins.Plugin, 0, len(ps)),
 	}
 
 	if err != nil {
@@ -39,7 +37,7 @@ func New(conf interface{}, ps ...plugins.Plugin) (Config, error) {
 
 	for _, plug := range ps {
 
-		err := c.AddPlugin(plug)
+		err := c.addPlugin(plug)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +56,7 @@ type canSetUsage interface {
 	SetUsage(func())
 }
 
-func (c *config) AddPlugin(plug plugins.Plugin) error {
+func (c *config) addPlugin(plug plugins.Plugin) error {
 	switch plug := plug.(type) {
 
 	case plugins.Visitor:

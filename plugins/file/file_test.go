@@ -68,12 +68,7 @@ func TestFileReader(t *testing.T) {
 
 		value := f.Config{}
 
-		conf, err := uconfig.New(&value)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = conf.AddPlugin(file.NewReader(tc.Source, tc.Unmarshall))
+		conf, err := uconfig.New(&value, file.NewReader(tc.Source, tc.Unmarshall))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -130,12 +125,7 @@ func TestFileOpen(t *testing.T) {
 
 		value := f.Config{}
 
-		conf, err := uconfig.New(&value)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = conf.AddPlugin(file.New(tc.Source, tc.Unmarshall, file.Config{}))
+		conf, err := uconfig.New(&value, file.New(tc.Source, tc.Unmarshall, file.Config{}))
 		if err != nil {
 			t.Fatal(err)
 		}

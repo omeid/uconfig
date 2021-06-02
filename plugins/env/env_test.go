@@ -49,12 +49,7 @@ func TestEnvBasic(t *testing.T) {
 
 	value := f.Config{Rethink: f.RethinkConfig{Db: "must-be-override-by-empty-env"}}
 
-	conf, err := uconfig.New(&value)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.AddPlugin(env.New())
+	conf, err := uconfig.New(&value, env.New())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,12 +86,7 @@ func TestEnvTag(t *testing.T) {
 
 	value := fEnv{}
 
-	conf, err := uconfig.New(&value)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.AddPlugin(env.New())
+	conf, err := uconfig.New(&value, env.New())
 	if err != nil {
 		t.Fatal(err)
 	}

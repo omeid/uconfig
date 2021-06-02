@@ -27,12 +27,7 @@ func TestDefaultTag(t *testing.T) {
 
 	value := fDefaults{Ignored: "not-empty"}
 
-	conf, err := uconfig.New(&value)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.AddPlugin(defaults.New())
+	conf, err := uconfig.New(&value, defaults.New())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -32,13 +32,6 @@ func TestDefaultTag(t *testing.T) {
 		},
 	}
 
-	value := fSecrets{}
-
-	conf, err := uconfig.New(&value)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	secrets := map[string]string{
 		"PASSWORD":    "password",
 		"AltPassword": "altPassword",
@@ -54,7 +47,8 @@ func TestDefaultTag(t *testing.T) {
 		return secret, nil
 	}
 
-	err = conf.AddPlugin(secret.New(source))
+	value := fSecrets{}
+	conf, err := uconfig.New(&value, secret.New(source))
 	if err != nil {
 		t.Fatal(err)
 	}
