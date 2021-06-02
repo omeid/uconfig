@@ -28,8 +28,12 @@ const (
 
 // New returns a new Flags
 func New(name string, errorHandling ErrorHandling, args []string) plugins.Visitor {
+
+	fs := flag.NewFlagSet(name, flag.ErrorHandling(errorHandling))
+	fs.Usage = func() {}
+
 	return &visitor{
-		fs:   flag.NewFlagSet(name, flag.ErrorHandling(errorHandling)),
+		fs:   fs,
 		args: args,
 	}
 }
@@ -75,7 +79,7 @@ func (v *visitor) Visit(fields flat.Fields) error {
 
 }
 
-// allows uconfig to disable the setusage usage.
+// allows usage to be overriden by user, if they must.
 func (v *visitor) SetUsage(usage func()) {
 	v.fs.Usage = usage
 }

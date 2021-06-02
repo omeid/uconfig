@@ -52,19 +52,10 @@ type config struct {
 	fields  flat.Fields
 }
 
-type canSetUsage interface {
-	SetUsage(func())
-}
-
 func (c *config) addPlugin(plug plugins.Plugin) error {
 	switch plug := plug.(type) {
 
 	case plugins.Visitor:
-		// disable the std flag usage
-		if plug, ok := plug.(canSetUsage); ok {
-			plug.SetUsage(func() {})
-		}
-
 		err := plug.Visit(c.fields)
 		if err != nil {
 			return err
