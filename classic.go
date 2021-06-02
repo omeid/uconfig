@@ -16,7 +16,7 @@ type Files = file.Files
 // Files map and parses them right away.
 func Classic(conf interface{}, files Files, userPlugins ...plugins.Plugin) (Config, error) {
 
-	fps := files.Plugins()
+	fps := files.Plugins(file.Config{Optional: true})
 
 	ps := make([]plugins.Plugin, 0, len(fps)+3+len(userPlugins))
 
@@ -32,7 +32,7 @@ func Classic(conf interface{}, files Files, userPlugins ...plugins.Plugin) (Conf
 	c, err := New(conf, ps...)
 
 	if err != nil {
-		return nil, err
+		return c, err
 	}
 	return c, c.Parse()
 }

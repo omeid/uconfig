@@ -11,7 +11,7 @@ uConfig takes the config schema as a struct decorated with tags, nesting is supp
 Supports all basic types, time.Duration, and any other type through `encoding.TextUnmarshaler` interface.
 See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package for details.
 
-## Example Configuration: 
+## Example Configuration:
 
 ```go
 package database
@@ -36,92 +36,70 @@ type Config struct {
 
 ```go
 package main
-// Config is our distribution configs as required for services and clients.
-type Config struct {
-
-  Redis   redis.Config
-  Database database.Config
-}
-
-```
 
 
-The following example uses `uconfig.Classic` to create a uConfig manager which processes defaults, optionally any config files, environment variables, and flags; in that order.
-In this example, we're using a single YAML config file, but you can specify multiple files (each with its own unmarshaller) in the `uconfig.Files` map if required.
-
-```yaml
-# path/to/config.yaml
-# YAML unmarshaller doesn't appear to handle flattened embedded structs,
-# so 'version' needs to sit under 'anon' to map correctly
-anon:
-  version: '0.2'
-gohard: true
-redis:
-  host: redis-host
-  port: 6379
-rethink:
-  db: base
-  host:
-    address: rethink-cluster
-    port: '28015'
-```
-
-```go
-// main.go
-package main
 
 import (
-  "os"
+  "encoding/json"
 
-  "gopkg.in/yaml.v2"
   "github.com/omeid/uconfig"
+
+  "$PROJECT/redis"
+  "$PROJECT/database"
 )
 
-type Anon struct {
-  Version string `default:"0.0.1" env:"APP_VERSION"`
+// Config is our application config.
+type Config struct {
+
+  // yes you can have slices.
+  Hosts    []string `default:"localhost,localhost.local"`
+
+  Redis    redis.Config
+  Database database.Config
+
 }
 
-type Host struct {
-  Address string `default:"localhost" env:"RETHINKDB_HOST"`
-  Port    string `default:"28015" env:"RETHINKDB_PORT"`
-}
 
-type RethinkConfig struct {
-  Host Host
-  Db   string `default:"my-project"`
-}
-
-type Redis struct {
-  Host string `default:"redis-master" env:"REDIS_HOST"`
-  Port int    `default:"6379" env:"REDIS_SERVICE_PORT"`
-}
-
-type YourConfig struct {
-  Anon
-  GoHard  bool
-  Redis   Redis
-  Rethink RethinkConfig
-}
 
 func main() {
 
-  conf := &YourConfig{}
+  conf := &Config{}
 
-  // Simply
-  c, err := uconfig.Classic(conf, uconfig.Files{
-    "path/to/config.yaml": yaml.Unmarshal,
-  })
+  files := uconfig.Files{
+    "config.json": json.Unmarshal,
+    // you can add more files if you like,
+    // they will be applied in this order.
+  }
 
-  // or alternatively, using your own combination of plugins
-  // see uconfig.Classic function for an example.
-
+  c, err := uconfig.Classic(&conf, files)
   if err != nil {
     c.Usage()
     os.Exit(1)
   }
-  // Use your config here as you please.
-}
 
+  // use conf as you please.
+  fmt.Printf("start with hosts set to: %#v\n", conf.Hosts)
+
+}
+```
+
+Run this program with a bad flag or value would print out the usage like so:
+
+```txt
+flag provided but not defined: -x
+
+Supported Fields:
+FIELD                FLAG                  ENV                      DEFAULT
+-----                -----                 -----                    -------
+Hosts                -hosts                HOSTS                    localhost,localhost.local
+Redis.Address        -redis-address        REDIS_HOST               redis-master
+Redis.Port           -redis-port           REDIS_SERVICE_PORT       6379
+Redis.Password       -redis-password       REDIS_PASSWORD
+Redis.DB             -redis-db             REDIS_DB                 0
+Redis.Expire         -redis-expire         REDIS_EXPIRE             5s
+Database.Address     -database-address     DATABASE_HOST            localhost
+Database.Port        -database-port        DATABASE_SERVICE_PORT    28015
+Database.Database    -database-database    DATABASE_DATABASE        my-project
 ```
 
 ## Secrets Plugin
@@ -178,21 +156,6 @@ Unlike most other plugins, secret requires explicit `secret:""` tag, this is bec
 ```
 
 
-## File Plugin 
-
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/omeid/uconfig/plugins/file)
-
-File plugin is a walker plugin that loads configuration files of different formats by way of accepting an Unmarshaler function that follows the standard unmarshal function of type `func(src []byte, v interface{}) error`; this allows you to use `encoding/json` and other encoders that follow the same interface. 
-
-Following is some common unmarshalers that follow the standard unmarshaler function:
-
-* JSON: `encoding/json`
-* TOML: `github.com/BurntSushi/toml`
-* YAML: `gopkg.in/yaml.v2`
-  * Note: YAML unmarshaller doesn't appear to handle embedded structs as cleanly as some unmarshallers; you may need to nest the embedded struct's options in your YAML file (see `version` in the example above)
-
-  
-  
 ## Tests
 
 For tests, you may consider the `Must` function to set the defaults, like so
@@ -226,19 +189,7 @@ For more details, see the [godoc](https://godoc.org/github.com/omeid/uconfig).
 uConfig provides a plugin mechanism for adding new sources of configuration.
 There are two kind of plugins, Walkers and Visitors.
 
-### Walkers 
-
-Walkers are used for configuration plugins that take the whole config struct and unmarshal the underlying content into the config struct.
-Plugins that load the configuration from files are good candidates for this.
-
-```go
-// Walker is the interface for plugins that take the whole config, like file loaders.
-type Walker interface {
-  Plugin
-
-  Walk(interface{}) error
-}
-```
+To implement your own, see the examples.
 
 
 ### Visitors
@@ -246,14 +197,11 @@ type Walker interface {
 Visitors get a _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ of the configuration struct, which is a flat view of the structs regardless of nesting level, for more details see the [flat](https://godoc.org/github.com/omeid/uconfig/flat) package documentation.
 
 Plugins that load the configurations from flat structures (e.g flags, environment variables, default tags) are good candidates for this type of plugin.
+See [env plugin](plugins/env/env.go) for an example.
 
+### Walkers
 
-```go
-// Visitor is the interface for plugins that require a flat view of the config, like flags, env vars
-type Visitor interface {
-  Plugin
+Walkers are used for configuration plugins that take the whole config struct and unmarshal the underlying content into the config struct.
+Plugins that load the configuration from files are good candidates for this.
 
-  Visit(flat.Fields) error
-}
-
-```
+See [file plugin](plugins/file/file.go) for an example.

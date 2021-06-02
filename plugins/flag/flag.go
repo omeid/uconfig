@@ -37,7 +37,7 @@ func New(name string, errorHandling ErrorHandling, args []string) plugins.Visito
 // Standard returns a set of flags configured in the common way.
 // It is same as: `New(os.Args[0], ContinueOnError, os.Args[1:])`
 func Standard() plugins.Plugin {
-	return New(os.Args[0], PanicOnError, os.Args[1:])
+	return New(os.Args[0], ContinueOnError, os.Args[1:])
 }
 
 var _ plugins.Visitor = (*visitor)(nil)

@@ -27,13 +27,14 @@ type Config interface {
 // New returns a new Config. The conf must be a pointer to a struct.
 func New(conf interface{}, ps ...plugins.Plugin) (Config, error) {
 	fields, err := flat.View(conf)
-	if err != nil {
-		return nil, err
-	}
 
 	c := &config{
 		conf:   conf,
 		fields: fields,
+	}
+
+	if err != nil {
+		return c, err
 	}
 
 	for _, plug := range ps {

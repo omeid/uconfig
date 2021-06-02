@@ -1,6 +1,7 @@
 package uconfig_test
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/omeid/uconfig"
@@ -8,6 +9,8 @@ import (
 )
 
 func TestUsage(t *testing.T) {
+	var buf bytes.Buffer
+	uconfig.UsageOutput = &buf
 
 	defer func() {
 		if r := recover(); r != nil {

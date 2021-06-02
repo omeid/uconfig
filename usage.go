@@ -2,6 +2,7 @@ package uconfig
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"sort"
@@ -11,11 +12,16 @@ import (
 	"github.com/omeid/uconfig/flat"
 )
 
+// UsageOutput is the io.Writer used by Usage message printer.
+var UsageOutput io.Writer = os.Stdout
+
+// Usage prints out the current config fields, flags, env vars
+// and any other source and setting.
 func (c *config) Usage() {
 
 	headers := getHeaders(c.fields)
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+	w := tabwriter.NewWriter(UsageOutput, 0, 0, 4, ' ', 0)
 	fmt.Fprintf(w, "\nSupported Fields:\n")
 	fmt.Fprintln(w, strings.ToUpper(strings.Join(headers, "\t")))
 

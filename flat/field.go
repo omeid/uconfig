@@ -73,12 +73,12 @@ func (f *field) Set(value string) error {
 
 		// Soon case reflect.Map:
 
-		// Maybe case reflect.Func:
 		// Maybe case reflect.Array:
 
 		// Why? case reflect.Complex64:
 		// Why? case reflect.Complex128:
 
+		// Never case reflect.Func:
 		// Never case reflect.Chan:
 		// Never case reflect.Interface:
 		// Never case reflect.Ptr:
@@ -145,19 +145,20 @@ func (f *field) setFloat(value string) error {
 
 func (f *field) setSlice(value string) error {
 
-	setter := setSliceElemSetter(f.field.Type().Elem())
+	t := f.field.Type()
+	setSliceElem := setSliceElem(t.Elem())
 
-	if setter == nil {
+	if setSliceElem == nil {
 		return nil
 	}
 
 	values := strings.Split(value, ",")
 	valuesLen := len(values)
 
-	f.field.Set(reflect.MakeSlice(f.field.Type(), valuesLen, valuesLen))
+	f.field.Set(reflect.MakeSlice(t, valuesLen, valuesLen))
 
 	for i, value := range values {
-		err := setter(f.field.Index(i), strings.TrimSpace(value))
+		err := setSliceElem(f.field.Index(i), strings.TrimSpace(value))
 		if err != nil {
 			return err
 		}
@@ -166,7 +167,7 @@ func (f *field) setSlice(value string) error {
 	return nil
 }
 
-func setSliceElemSetter(elem reflect.Type) func(reflect.Value, string) error {
+func setSliceElem(elem reflect.Type) func(reflect.Value, string) error {
 
 	switch elem.Kind() {
 

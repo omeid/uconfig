@@ -135,7 +135,7 @@ func TestFileOpen(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = conf.AddPlugin(file.New(tc.Source, tc.Unmarshall))
+		err = conf.AddPlugin(file.New(tc.Source, tc.Unmarshall, file.Config{}))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -186,7 +186,7 @@ func TestMulti(t *testing.T) {
 	}`
 
 	reader := file.NewReader(bytes.NewReader([]byte(srcJSON)), json.Unmarshal)
-	open := file.New("testdata/config_rethink.json", json.Unmarshal)
+	open := file.New("testdata/config_rethink.json", json.Unmarshal, file.Config{})
 
 	value := f.Config{}
 	conf, err := uconfig.New(&value, reader, open)
