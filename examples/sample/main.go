@@ -26,9 +26,10 @@ func main() {
 	conf := &Config{}
 
 	files := uconfig.Files{
-		"config.json": json.Unmarshal,
-		// you can add more files if you like,
-		// they will be applied in this order.
+		{"config.json", json.Unmarshal},
+		// you can of course add as many files
+		// as you want, and they will be applied
+		// in the given order.
 	}
 
 	c, err := uconfig.Classic(&conf, files)

@@ -11,14 +11,17 @@ import (
 
 // Files represents a set of file paths and the appropriate
 // unmarshal function for the given file.
-type Files map[string]Unmarshal
+type Files []struct {
+	Path      string
+	Unmarshal Unmarshal
+}
 
 // Plugins constructs a slice of Plugin from the Files list of
 // paths and unmarshal functions.
 func (f Files) Plugins(config Config) []plugins.Plugin {
 	ps := make([]plugins.Plugin, 0, len(f))
-	for path, unmarshal := range f {
-		ps = append(ps, New(path, unmarshal, config))
+	for _, f := range f {
+		ps = append(ps, New(f.Path, f.Unmarshal, config))
 	}
 
 	return ps

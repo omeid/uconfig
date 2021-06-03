@@ -66,9 +66,9 @@ func main() {
   conf := &Config{}
 
   files := uconfig.Files{
-    "config.json": json.Unmarshal,
+    {"config.json", json.Unmarshal}
     // you can add more files if you like,
-    // they will be applied in this order.
+    // they will be applied in the given order.
   }
 
   c, err := uconfig.Classic(&conf, files)
@@ -148,7 +148,10 @@ Unlike most other plugins, secret requires explicit `secret:""` tag, this is bec
   // then you can use the secretPlugin with uConfig like any other plugin.
   // Lucky, uconfig.Classic allows passing more plugins, which means
   // you can simply do the following for flags, envs, files, and secrets!
-  files := uconfig.Files{"config.json": json.Unmarshal}
+  files := uconfig.Files{
+    {"config.json", json.Unmarshal}
+  }
+
   _, err := uconfig.Classic(&value, files, secretPlugin)
   if err != nil {
     t.Fatal(err)

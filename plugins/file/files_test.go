@@ -35,8 +35,8 @@ func TestFiles(t *testing.T) {
 	}
 
 	files := file.Files{
-		"testdata/config_rethink.json": json.Unmarshal,
-		"testdata/config_partial.json": json.Unmarshal,
+		{"testdata/config_rethink.json", json.Unmarshal},
+		{"testdata/config_partial.json", json.Unmarshal},
 	}
 
 	value := f.Config{}

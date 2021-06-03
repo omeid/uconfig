@@ -43,7 +43,9 @@ func TestClassicBasic(t *testing.T) {
 		},
 	}
 
-	files := uconfig.Files{"testdata/classic.json": json.Unmarshal}
+	files := uconfig.Files{
+		{"testdata/classic.json", json.Unmarshal},
+	}
 
 	value := f.Config{}
 
@@ -97,7 +99,9 @@ func TestClassicWithSecret(t *testing.T) {
 		},
 	}
 
-	files := uconfig.Files{"testdata/classic.json": json.Unmarshal}
+	files := uconfig.Files{
+		{"testdata/classic.json", json.Unmarshal},
+	}
 
 	value := Config{}
 

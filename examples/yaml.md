@@ -65,7 +65,7 @@ func main() {
 
   // Simply
   c, err := uconfig.Classic(conf, uconfig.Files{
-    "path/to/config.yaml": yaml.Unmarshal,
+    { "path/to/config.yaml", yaml.Unmarshal },
   })
 
   // or alternatively, using your own combination of plugins
