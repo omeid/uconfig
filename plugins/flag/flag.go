@@ -27,7 +27,7 @@ const (
 )
 
 // New returns a new Flags
-func New(name string, errorHandling ErrorHandling, args []string) plugins.Visitor {
+func New(name string, errorHandling ErrorHandling, args []string) plugins.Plugin {
 
 	fs := flag.NewFlagSet(name, flag.ErrorHandling(errorHandling))
 	fs.Usage = func() {}

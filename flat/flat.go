@@ -73,8 +73,14 @@ func walkStruct(prefix string, rs reflect.Value) ([]Field, error) {
 		default:
 
 			fieldName := ft.Name
+
+			// unless it is override
+			if name, ok := ft.Tag.Lookup("uconfig"); ok && name != "" {
+				fieldName = name
+			}
+
 			if prefix != "" {
-				fieldName = prefix + "." + ft.Name
+				fieldName = prefix + "." + fieldName
 			}
 
 			fields = append(fields, &field{

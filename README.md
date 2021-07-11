@@ -17,8 +17,8 @@ See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package f
 package database
 // Config holds the database configurations.
 type Config struct {
-  Address  string `default:"localhost" env:"DATABASE_HOST"`
-  Port     string `default:"28015" env:"DATABASE_SERVICE_PORT"`
+  Address  string `default:"localhost"`
+  Port     string `default:"28015"`
   Database string `default:"my-project"`
 }
 ```
@@ -26,8 +26,8 @@ type Config struct {
 package redis
 // Config describes the requirement for redis client.
 type Config struct {
-  Address  string        `default:"redis-master" env:"REDIS_HOST"`
-  Port     string        `default:"6379" env:"REDIS_SERVICE_PORT"`
+  Address  string        `default:"redis-master"`
+  Port     string        `default:"6379"`
   Password string        `secret:""`
   DB       int           `default:"0"`
   Expire   time.Duration `default:"5s"`
@@ -65,13 +65,13 @@ func main() {
 
   conf := &Config{}
 
-  files := uconfig.Files{
+  confFiles := uconfig.Files{
     {"config.json", json.Unmarshal}
     // you can add more files if you like,
     // they will be applied in the given order.
   }
 
-  c, err := uconfig.Classic(&conf, files)
+  c, err := uconfig.Classic(&conf, confFiles)
   if err != nil {
     c.Usage()
     os.Exit(1)
@@ -85,6 +85,7 @@ func main() {
 
 Run this program with a bad flag or value would print out the usage like so:
 
+
 ```txt
 flag provided but not defined: -x
 
@@ -92,14 +93,15 @@ Supported Fields:
 FIELD                FLAG                  ENV                      DEFAULT
 -----                -----                 -----                    -------
 Hosts                -hosts                HOSTS                    localhost,localhost.local
-Redis.Address        -redis-address        REDIS_HOST               redis-master
-Redis.Port           -redis-port           REDIS_SERVICE_PORT       6379
+Redis.Address        -redis-address        REDIS_ADDRESS            redis-master
+Redis.Port           -redis-port           REDIS_PORT               6379
 Redis.Password       -redis-password       REDIS_PASSWORD
 Redis.DB             -redis-db             REDIS_DB                 0
 Redis.Expire         -redis-expire         REDIS_EXPIRE             5s
 Database.Address     -database-address     DATABASE_HOST            localhost
 Database.Port        -database-port        DATABASE_SERVICE_PORT    28015
 Database.Database    -database-database    DATABASE_DATABASE        my-project
+exit status 1
 ```
 
 ## Secrets Plugin
@@ -132,6 +134,10 @@ Unlike most other plugins, secret requires explicit `secret:""` tag, this is bec
   conf := &Config{}
 
 
+  files := uconfig.Files{
+    {"config.json", json.Unmarshal}
+  }
+
    // secret.New accepts a function that maps a secret name to it's value.
    secretPlugin := secret.New(func(name string) (string, error) {
       // you're free to grab the secret based on the name from wherever
@@ -148,15 +154,72 @@ Unlike most other plugins, secret requires explicit `secret:""` tag, this is bec
   // then you can use the secretPlugin with uConfig like any other plugin.
   // Lucky, uconfig.Classic allows passing more plugins, which means
   // you can simply do the following for flags, envs, files, and secrets!
-  files := uconfig.Files{
-    {"config.json", json.Unmarshal}
-  }
-
   _, err := uconfig.Classic(&value, files, secretPlugin)
   if err != nil {
     t.Fatal(err)
   }
 ```
+
+## Custom names:
+
+Sometimes you might want to use a different env var, or flag namefor backwards compatibility or other reasons, you have two options.
+
+1. uconfig tag
+
+You can change the name of a field as seen by unconfig.
+This option supports the usual nesting prefixing.
+See the port example below.
+
+2. Plugin specific tags
+
+Most plugins support controlling the field name as seen by that specific plugin.
+
+This option does not support nesting prefixes.
+See the Database field in the example below.
+
+
+```go
+package database
+
+// Config holds the database configurations.
+type Config struct {
+	Address  string `default:"localhost"`
+	Port     string `default:"28015" uconfig:"service.Port"`
+	Database string `default:"my-project" env:"DB_NAME" flag:"main-db-name"`
+}
+```
+
+
+Which should give you the following settings:
+
+```
+Supported Fields:
+FIELD                    FLAG                      ENV                      DEFAULT
+-----                    -----                     -----                    -------
+Hosts                    -hosts                    HOSTS                    localhost,localhost.local
+Redis.Address            -redis-address            REDIS_ADDRESS            redis-master
+Redis.Port               -redis-port               REDIS_PORT               6379
+Redis.Password           -redis-password           REDIS_PASSWORD           
+Redis.DB                 -redis-db                 REDIS_DB                 0
+Redis.Expire             -redis-expire             REDIS_EXPIRE             5s
+Database.Address         -database-address         DATABASE_ADDRESS         localhost
+Database.service.Port    -database-service-port    DATABASE_SERVICE_PORT    28015
+Database.Database        -main-db-db               DB_NAME                  my-project
+exit status 1
+```
+
+
+For file based plugins, you will need to use the appropriate tags as used by your encoder of choice. For example:
+
+```go
+package users
+
+// Config holds the database configurations.
+type Config struct {
+  Host string `json:"bind_addr"`
+}
+```
+
 
 
 ## Tests
