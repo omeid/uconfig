@@ -104,62 +104,6 @@ Database.Database    -database-database    DATABASE_DATABASE        my-project
 exit status 1
 ```
 
-## Secrets Plugin
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/omeid/uconfig/plugins/secret)
-
-The secret provider allows you to grab the value of a config from anywhere you want. You simply need to implement the `func(name string) (value string)` function and pass it to the secrets plugin.
-
-Unlike most other plugins, secret requires explicit `secret:""` tag, this is because only specific config values like passwords and api keys come from a secret provider, compared to the rest of the config which can be set in various ways.
-
-```go
-
-  // Creds is an example of a config struct that uses secret values.
-  type Creds struct {
-    // by default, secret plugin will generate a name that is identical
-    // to env plugin, SCREAM_SNAKE_CASE, so in this case it will be
-    // APIKEY however, following the standard uConfig nesting rules
-    // in Config struct below, it becomes CREDS_APIKEY.
-    APIKey   string `secret:""`
-    // or you can provide your own name, which will not be impacted
-    // by nesting or the field name.
-    APIToken string `secret:"API_TOKEN"`
-  }
-
-  type Config struct {
-    Redis   Redis
-    Creds   Creds
-  }
-
-
-  conf := &Config{}
-
-
-  files := uconfig.Files{
-    {"config.json", json.Unmarshal}
-  }
-
-   // secret.New accepts a function that maps a secret name to it's value.
-   secretPlugin := secret.New(func(name string) (string, error) {
-      // you're free to grab the secret based on the name from wherever
-      // you please, aws secrets-manager, hashicorp vault, or wherever.
-      value, ok := secretSource.Get(name)
-
-      if !ok {
-        return "", ErrSecretNotFound
-      }
-
-      return value, nil
-  })
-
-  // then you can use the secretPlugin with uConfig like any other plugin.
-  // Lucky, uconfig.Classic allows passing more plugins, which means
-  // you can simply do the following for flags, envs, files, and secrets!
-  _, err := uconfig.Classic(&value, files, secretPlugin)
-  if err != nil {
-    t.Fatal(err)
-  }
-```
-
 ## Custom names:
 
 Sometimes you might want to use a different env var, or flag namefor backwards compatibility or other reasons, you have two options.
@@ -199,7 +143,7 @@ FIELD                    FLAG                      ENV                      DEFA
 Hosts                    -hosts                    HOSTS                    localhost,localhost.local
 Redis.Address            -redis-address            REDIS_ADDRESS            redis-master
 Redis.Port               -redis-port               REDIS_PORT               6379
-Redis.Password           -redis-password           REDIS_PASSWORD           
+Redis.Password           -redis-password           REDIS_PASSWORD
 Redis.DB                 -redis-db                 REDIS_DB                 0
 Redis.Expire             -redis-expire             REDIS_EXPIRE             5s
 Database.Address         -database-address         DATABASE_ADDRESS         localhost
@@ -220,6 +164,71 @@ type Config struct {
 }
 ```
 
+## Secrets Plugin
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/omeid/uconfig/plugins/secret)
+
+The secret provider allows you to grab the value of a config from anywhere you want. You simply need to implement the `func(name string) (value string)` function and pass it to the secrets plugin.
+
+Unlike most other plugins, secret requires explicit `secret:""` tag, this is because only specific config values like passwords and api keys come from a secret provider, compared to the rest of the config which can be set in various ways.
+
+```go
+
+import (
+
+  "github.com/omeid/uconfig"
+  "github.com/omeid/uconfig/plugins/secret"
+)
+// Creds is an example of a config struct that uses secret values.
+type Creds struct {
+  // by default, secret plugin will generate a name that is identical
+  // to env plugin, SCREAM_SNAKE_CASE, so in this case it will be
+  // APIKEY however, following the standard uConfig nesting rules
+  // in Config struct below, it becomes CREDS_APIKEY.
+  APIKey   string `secret:""`
+  // or you can provide your own name, which will not be impacted
+  // by nesting or the field name.
+  APIToken string `secret:"API_TOKEN"`
+}
+
+type Config struct {
+  Redis   Redis
+  Creds   Creds
+}
+
+
+func main() {
+
+  conf := &Config{}
+
+
+  files := uconfig.Files{
+    {"config.json", json.Unmarshal}
+  }
+
+   // secret.New accepts a function that maps a secret name to it's value.
+   secretPlugin := secret.New(func(name string) (string, error) {
+      // you're free to grab the secret based on the name from wherever
+      // you please, aws secrets-manager, hashicorp vault, or wherever.
+      value, ok := secretSource.Get(name)
+
+      if !ok {
+        return "", ErrSecretNotFound
+      }
+
+      return value, nil
+  })
+
+  // then you can use the secretPlugin with uConfig like any other plugin.
+  // Lucky, uconfig.Classic allows passing more plugins, which means
+  // you can simply do the following for flags, envs, files, and secrets!
+  _, err := uconfig.Classic(&value, files, secretPlugin)
+  if err != nil {
+    t.Fatal(err)
+  }
+
+}
+
+```
 
 
 ## Tests
