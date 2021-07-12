@@ -126,10 +126,25 @@ See the Database field in the example below.
 package database
 
 // Config holds the database configurations.
-type Config struct {
+type Database struct {
 	Address  string `default:"localhost"`
-	Port     string `default:"28015" uconfig:"service.Port"`
+	Port     string `default:"28015" uconfig:"Service.Port"`
 	Database string `default:"my-project" env:"DB_NAME" flag:"main-db-name"`
+}
+```
+
+
+```go
+package main
+
+// Config is our application config.
+type Config struct {
+
+  // yes you can have slices.
+  Hosts    []string `default:"localhost,localhost.local"`
+
+  Redis    redis.Config
+  Database database.Config
 }
 ```
 
@@ -147,7 +162,7 @@ Redis.Password           -redis-password           REDIS_PASSWORD
 Redis.DB                 -redis-db                 REDIS_DB                 0
 Redis.Expire             -redis-expire             REDIS_EXPIRE             5s
 Database.Address         -database-address         DATABASE_ADDRESS         localhost
-Database.service.Port    -database-service-port    DATABASE_SERVICE_PORT    28015
+Database.Service.Port    -database-service-port    DATABASE_SERVICE_PORT    28015
 Database.Database        -main-db-db               DB_NAME                  my-project
 exit status 1
 ```
