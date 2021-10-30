@@ -40,8 +40,7 @@ func (f *field) String() string {
 }
 
 func (f *field) Get() interface{} {
-	// return f.ptr
-	return nil
+	return f.field.Interface()
 }
 
 var textUnmarshalerType = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()

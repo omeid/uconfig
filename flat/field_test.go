@@ -47,4 +47,17 @@ func TestField(t *testing.T) {
 	if def := firstField.String(); def != "first" {
 		t.Errorf("expected String() to return default tag value but got %v", def)
 	}
+
+	if err := firstField.Set("some-value"); err != nil {
+		t.Errorf("expected Set() to return nil but got: %v", err)
+	}
+
+	value, ok := firstField.Get().(string)
+	if !ok {
+		t.Errorf("expected Get() to return string interface{} but got %v", firstField.Get())
+	}
+
+	if value != "some-value" {
+		t.Errorf("expected Get() value to be okay but got %v", value)
+	}
 }
