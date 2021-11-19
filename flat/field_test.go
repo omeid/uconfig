@@ -1,6 +1,7 @@
 package flat_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,7 +11,8 @@ import (
 func TestField(t *testing.T) {
 
 	type Config struct {
-		First string `default:"first" test:"test-tag"`
+		First  string `default:"first" test:"test-tag"`
+		Second error
 	}
 
 	conf := Config{}
@@ -35,6 +37,10 @@ func TestField(t *testing.T) {
 		t.Errorf("expected tag test to be test-tag but got %v", tag)
 	}
 
+	if !firstField.IsZero() {
+		t.Error("expected IsZero() to return true")
+	}
+
 	meta1 := firstField.Meta()
 	meta2 := firstField.Meta()
 
@@ -46,5 +52,25 @@ func TestField(t *testing.T) {
 
 	if def := firstField.String(); def != "first" {
 		t.Errorf("expected String() to return default tag value but got %v", def)
+	}
+
+	if err := firstField.Set("some-value"); err != nil {
+		t.Errorf("expected Set() to return nil but got: %v", err)
+	}
+
+	if firstField.IsZero() {
+		t.Error("expected IsZero() to return false")
+	}
+
+	secondField := fs[1]
+
+	if !secondField.IsZero() {
+		t.Error("expected IsZero() to return true")
+	}
+
+	conf.Second = errors.New("oh no")
+
+	if secondField.IsZero() {
+		t.Error("expected IsZero() to return false")
 	}
 }

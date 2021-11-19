@@ -24,7 +24,7 @@ type Field interface {
 
 	String() string
 	Set(string) error
-	Get() interface{}
+	IsZero() bool
 }
 
 // View provides a flat view of the provided structs an array of fields.

@@ -39,9 +39,8 @@ func (f *field) String() string {
 	return f.tag.Get("default")
 }
 
-func (f *field) Get() interface{} {
-	// return f.ptr
-	return nil
+func (f *field) IsZero() bool {
+	return f.field.IsValid() && f.field.IsZero()
 }
 
 var textUnmarshalerType = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()
