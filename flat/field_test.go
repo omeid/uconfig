@@ -37,8 +37,8 @@ func TestField(t *testing.T) {
 		t.Errorf("expected tag test to be test-tag but got %v", tag)
 	}
 
-	if !firstField.IsZeroValue() {
-		t.Error("expected IsZeroValue() to return true")
+	if !firstField.IsZero() {
+		t.Error("expected IsZero() to return true")
 	}
 
 	meta1 := firstField.Meta()
@@ -58,19 +58,19 @@ func TestField(t *testing.T) {
 		t.Errorf("expected Set() to return nil but got: %v", err)
 	}
 
-	if firstField.IsZeroValue() {
-		t.Error("expected IsZeroValue() to return false")
+	if firstField.IsZero() {
+		t.Error("expected IsZero() to return false")
 	}
 
 	secondField := fs[1]
 
-	if !secondField.IsZeroValue() {
-		t.Error("expected IsZeroValue() to return true")
+	if !secondField.IsZero() {
+		t.Error("expected IsZero() to return true")
 	}
 
 	conf.Second = errors.New("oh no")
 
-	if secondField.IsZeroValue() {
-		t.Error("expected IsZeroValue() to return false")
+	if secondField.IsZero() {
+		t.Error("expected IsZero() to return false")
 	}
 }
