@@ -7,30 +7,30 @@ import (
 	"time"
 )
 
-//Anon is part of text fixtures.
+// Anon is part of text fixtures.
 type Anon struct {
 	Version string
 }
 
-//Host is part of text fixtures.
+// Host is part of text fixtures.
 type Host struct {
 	Address string
 	Port    string
 }
 
-//RethinkConfig is part of text fixtures.
+// RethinkConfig is part of text fixtures.
 type RethinkConfig struct {
 	Host Host
-	Db   string
+	Db   string `default:"primary" usage:"main database used by our application"`
 }
 
-//Redis is part of text fixtures.
+// Redis is part of text fixtures.
 type Redis struct {
 	Host string
 	Port int
 }
 
-//Config is part of text fixtures.
+// Config is part of text fixtures.
 type Config struct {
 	Anon
 	GoHard  bool

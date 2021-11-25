@@ -15,7 +15,7 @@ import (
 type Config struct {
 
 	// yes you can have slices.
-	Hosts []string `default:"localhost,localhost.local"`
+	Hosts []string `default:"localhost,localhost.local" usage:"the ip or domains to bind to"`
 
 	Redis    redis.Config
 	Database database.Config
