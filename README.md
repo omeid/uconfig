@@ -52,7 +52,7 @@ import (
 type Config struct {
 
   // yes you can have slices.
-  Hosts    []string `default:"localhost,localhost.local"`
+  Hosts    []string `default:"localhost,localhost.local" usage:"the ip or domains to bind to"`
 
   Redis    redis.Config
   Database database.Config
@@ -86,27 +86,27 @@ func main() {
 Run this program with a bad flag or value would print out the usage like so:
 
 
-```txt
+```
 flag provided but not defined: -x
 
 Supported Fields:
-FIELD                FLAG                  ENV                      DEFAULT
------                -----                 -----                    -------
-Hosts                -hosts                HOSTS                    localhost,localhost.local
-Redis.Address        -redis-address        REDIS_ADDRESS            redis-master
-Redis.Port           -redis-port           REDIS_PORT               6379
+FIELD                FLAG                  ENV                  DEFAULT                      USAGE
+-----                -----                 -----                -------                      -----
+Hosts                -hosts                HOSTS                localhost,localhost.local    the ip or domains to bind to
+Redis.Address        -redis-address        REDIS_ADDRESS        redis-master
+Redis.Port           -redis-port           REDIS_PORT           6379
 Redis.Password       -redis-password       REDIS_PASSWORD
-Redis.DB             -redis-db             REDIS_DB                 0
-Redis.Expire         -redis-expire         REDIS_EXPIRE             5s
-Database.Address     -database-address     DATABASE_HOST            localhost
-Database.Port        -database-port        DATABASE_SERVICE_PORT    28015
-Database.Database    -database-database    DATABASE_DATABASE        my-project
-exit status 1
+Redis.DB             -redis-db             REDIS_DB             0
+Redis.Expire         -redis-expire         REDIS_EXPIRE         5s
+Database.Address     -database-address     DATABASE_ADDRESS     localhost
+Database.Port        -database-port        DATABASE_PORT        28015
+Database.Database    -database-database    DATABASE_DATABASE    my-project
 ```
+
 
 ## Custom names:
 
-Sometimes you might want to use a different env var, or flag namefor backwards compatibility or other reasons, you have two options.
+Sometimes you might want to use a different env var, or flag name for backwards compatibility or other reasons, you have two options.
 
 1. uconfig tag
 
@@ -127,9 +127,9 @@ package database
 
 // Config holds the database configurations.
 type Database struct {
-	Address  string `default:"localhost"`
-	Port     string `default:"28015" uconfig:"Service.Port"`
-	Database string `default:"my-project" env:"DB_NAME" flag:"main-db-name"`
+  Address  string `default:"localhost"`
+  Port     string `default:"28015" uconfig:"Service.Port"`
+  Database string `default:"my-project" env:"DB_NAME" flag:"main-db-name"`
 }
 ```
 
@@ -153,10 +153,9 @@ Which should give you the following settings:
 
 ```
 Supported Fields:
-FIELD                    FLAG                      ENV                      DEFAULT
------                    -----                     -----                    -------
-Hosts                    -hosts                    HOSTS                    localhost,localhost.local
-Redis.Address            -redis-address            REDIS_ADDRESS            redis-master
+FIELD                    FLAG                      ENV                      DEFAULT                      USAGE
+-----                    -----                     -----                    -------                      -----
+Hosts                    -hosts                    HOSTS                    localhost,localhost.local    the ip or domains to bind to
 Redis.Port               -redis-port               REDIS_PORT               6379
 Redis.Password           -redis-password           REDIS_PASSWORD
 Redis.DB                 -redis-db                 REDIS_DB                 0

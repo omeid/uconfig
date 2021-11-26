@@ -10,7 +10,14 @@ import (
 	"text/tabwriter"
 
 	"github.com/omeid/uconfig/flat"
+	"github.com/omeid/uconfig/plugins"
 )
+
+const usageTag = "usage"
+
+func init() {
+	plugins.RegisterTag(usageTag)
+}
 
 // UsageOutput is the io.Writer used by Usage message printer.
 var UsageOutput io.Writer = os.Stdout
@@ -19,6 +26,7 @@ var UsageOutput io.Writer = os.Stdout
 // and any other source and setting.
 func (c *config) Usage() {
 
+	setUsageMeta(c.fields)
 	headers := getHeaders(c.fields)
 
 	w := tabwriter.NewWriter(UsageOutput, 0, 0, 4, ' ', 0)
@@ -55,10 +63,21 @@ func (c *config) Usage() {
 	}
 }
 
-type null struct{}
+func setUsageMeta(fs flat.Fields) {
+
+	for _, f := range fs {
+		usage, ok := f.Tag(usageTag)
+		if !ok {
+			continue
+		}
+
+		f.Meta()[usageTag] = usage
+
+	}
+}
 
 func getHeaders(fs flat.Fields) []string {
-	tagMap := map[string]null{}
+	tagMap := map[string]struct{}{}
 
 	for _, f := range fs {
 		for key := range f.Meta() {
@@ -66,7 +85,7 @@ func getHeaders(fs flat.Fields) []string {
 		}
 	}
 
-	tags := make([]string, 0, len(tagMap)+1)
+	tags := make([]string, 0, len(tagMap)+2)
 
 	tags = append(tags, "field")
 
@@ -76,16 +95,16 @@ func getHeaders(fs flat.Fields) []string {
 
 	weights := map[string]int{
 		"field": 1,
-		"flag":  2,
-		"usage": 4,
-		"env":   3,
+		"usage": 99,
+		"flag":  3,
+		"env":   4,
 	}
 
 	weight := func(tags []string, i int) int {
 		key := tags[i]
 		w, ok := weights[key]
 		if !ok {
-			return 99
+			return 98
 		}
 		return w
 	}

@@ -33,6 +33,7 @@ func makeSecretName(name string) string {
 
 	return name
 }
+
 func (v *secret) Visit(f flat.Fields) error {
 
 	v.fields = f
