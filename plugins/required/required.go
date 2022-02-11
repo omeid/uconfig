@@ -2,18 +2,21 @@ package required
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/plugins"
 )
 
 type ErrRequiredField struct {
-	Field string
+	field string
 }
 
 func (e ErrRequiredField) Error() string {
-	return fmt.Sprintf("%s requires a value", e.Field)
+	return fmt.Sprintf("%s requires a value", e.field)
+}
+
+func (e ErrRequiredField) Name() string {
+	return e.field
 }
 
 const tag = "required"
@@ -34,12 +37,12 @@ func (v *visitor) Parse() error {
 	for _, field := range v.fields {
 		value, ok := field.Tag(tag)
 
-		if ok && value == "true" {
-			fieldType := reflect.TypeOf(field.Get())
+		if !ok || value != "true" {
+			return nil
+		}
 
-			if fieldType != nil && fieldType.Comparable() && field.Get() == reflect.Zero(fieldType).Interface() {
-				return ErrRequiredField{Field: field.Name()}
-			}
+		if field.IsZero() {
+			return &ErrRequiredField{field: field.Name()}
 		}
 	}
 

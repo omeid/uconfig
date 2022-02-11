@@ -10,8 +10,8 @@ import (
 )
 
 type fRequired struct {
-	Required    string `required:"true"`
-	NotRequired string
+	Required      string `required:"true"`
+	NotRequired   string
 	NotComparable fmt.Stringer `required:"true"`
 }
 
@@ -23,8 +23,18 @@ func TestRequired(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = conf.Parse(); !errors.As(err, &required.ErrRequiredField{}) {
+	err = conf.Parse()
+	t.Log(err)
+
+	var fieldError *required.ErrRequiredField
+
+	if !errors.As(err, &fieldError) {
 		t.Fatalf("expected Parse() to fail with required field error but did not, instead received: %#v", err)
+	}
+
+	fieldErrorName := fieldError.Name()
+	if fieldErrorName != "Required" {
+		t.Fatalf("Expected to fail on first field `Required` but failed on `%s`", fieldErrorName)
 	}
 
 	expect.Required = "something"
