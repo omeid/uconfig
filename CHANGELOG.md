@@ -30,3 +30,9 @@ type Files []struct {
 #### plugins/files.Plugins
 
 No longer accepts an option.
+
+
+
+#### plugins/flag
+
+No longer supports `SetUsage`.

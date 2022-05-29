@@ -78,8 +78,3 @@ func (v *visitor) Visit(fields flat.Fields) error {
 	return nil
 
 }
-
-// allows usage to be overriden by user, if they must.
-func (v *visitor) SetUsage(usage func()) {
-	v.fs.Usage = usage
-}
