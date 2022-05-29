@@ -14,14 +14,25 @@ import (
 type Files []struct {
 	Path      string
 	Unmarshal Unmarshal
+	Optional  bool
 }
 
 // Plugins constructs a slice of Plugin from the Files list of
 // paths and unmarshal functions.
-func (f Files) Plugins(config Config) []plugins.Plugin {
+func (f Files) Plugins() []plugins.Plugin {
 	ps := make([]plugins.Plugin, 0, len(f))
 	for _, f := range f {
-		ps = append(ps, New(f.Path, f.Unmarshal, config))
+
+		fp := New(
+			f.Path,
+			f.Unmarshal,
+			Config{Optional: f.Optional},
+		)
+
+		if fp == nil {
+			continue
+		}
+		ps = append(ps, fp)
 	}
 
 	return ps
@@ -53,13 +64,12 @@ func New(path string, unmarshal Unmarshal, config Config) plugins.Plugin {
 
 	src, err := os.Open(path)
 
-	if err != nil && config.Optional && os.IsNotExist(err) {
-		return &walker{
-			unmarshal: unmarshal,
-		}
+	if config.Optional && os.IsNotExist(err) {
+		err = nil
 	}
 
 	return &walker{
+		filepath:  path,
 		src:       src,
 		unmarshal: unmarshal,
 		err:       err,
@@ -67,6 +77,7 @@ func New(path string, unmarshal Unmarshal, config Config) plugins.Plugin {
 }
 
 type walker struct {
+	filepath  string
 	src       io.Reader
 	conf      interface{}
 	unmarshal Unmarshal

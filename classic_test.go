@@ -44,7 +44,7 @@ func TestClassicBasic(t *testing.T) {
 	}
 
 	files := uconfig.Files{
-		{"testdata/classic.json", json.Unmarshal},
+		{"testdata/classic.json", json.Unmarshal, true},
 	}
 
 	value := f.Config{}
@@ -90,28 +90,27 @@ func TestClassicWithSecret(t *testing.T) {
 				Address: "rethink-cluster",
 				Port:    "28015",
 			},
-			Db: "base",
+			Db:       "base",
+			Password: "top secret token",
 		},
 
 		Creds: Creds{
-			APIKey:   "key",
-			APIToken: "token",
+			APIKey:   "top secret token",
+			APIToken: "top secret token",
 		},
 	}
 
 	files := uconfig.Files{
-		{"testdata/classic.json", json.Unmarshal},
+		{"testdata/classic.json", json.Unmarshal, true},
 	}
 
 	value := Config{}
 
 	SecretProvider := func(name string) (string, error) {
-		if name == "CREDS_APIKEY" {
-			return "key", nil
-		}
 
-		if name == "API_TOKEN" {
-			return "token", nil
+		// known secrets.
+		if name == "API_TOKEN" || name == "RETHINK_PASSWORD" || name == "CREDS_APIKEY" {
+			return "top secret token", nil
 		}
 
 		return "", fmt.Errorf("Secret not found %s", name)
@@ -128,6 +127,24 @@ func TestClassicWithSecret(t *testing.T) {
 
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
+	}
+
+}
+
+func TestClassicBadPlugin(t *testing.T) {
+
+	var badPlugin BadPlugin
+
+	config := f.Config{}
+
+	_, err := uconfig.Classic(&config, nil, badPlugin)
+
+	if err == nil {
+		t.Error("expected error for bad plugin, got nil")
+	}
+
+	if err.Error() != "Unsupported plugins. Expecting a Walker or Visitor" {
+		t.Errorf("Expected unsupported plugin error, got: %v", err)
 	}
 
 }

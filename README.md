@@ -66,7 +66,8 @@ func main() {
   conf := &Config{}
 
   confFiles := uconfig.Files{
-    {"config.json", json.Unmarshal}
+     // filepath, Unmarshal func, Optional
+    {"config.json", json.Unmarshal, true}
     // you can add more files if you like,
     // they will be applied in the given order.
   }
@@ -216,7 +217,7 @@ func main() {
 
 
   files := uconfig.Files{
-    {"config.json", json.Unmarshal}
+    {"config.json", json.Unmarshal, false}
   }
 
    // secret.New accepts a function that maps a secret name to it's value.

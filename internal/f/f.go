@@ -20,8 +20,9 @@ type Host struct {
 
 // RethinkConfig is part of text fixtures.
 type RethinkConfig struct {
-	Host Host
-	Db   string `default:"primary" usage:"main database used by our application"`
+	Host     Host
+	Db       string `default:"primary" usage:"main database used by our application"`
+	Password string `secret:""`
 }
 
 // Redis is part of text fixtures.

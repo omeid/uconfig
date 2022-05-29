@@ -26,7 +26,7 @@ func main() {
 	conf := &Config{}
 
 	files := uconfig.Files{
-		{"config.json", json.Unmarshal},
+		{"config.json", json.Unmarshal, true},
 		// you can of course add as many files
 		// as you want, and they will be applied
 		// in the given order.

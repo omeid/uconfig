@@ -3,7 +3,6 @@ package uconfig
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"sort"
 	"strings"
@@ -53,13 +52,14 @@ func (c *config) Usage() {
 		}
 
 		fmt.Fprintln(w, strings.Join(values, "\t"))
-
 	}
 
 	err := w.Flush()
 
 	if err != nil {
-		log.Fatal(err)
+		// we are asked for usage which means it is interactive use
+		// and so panicing is acceptable.
+		panic(err)
 	}
 }
 
@@ -115,7 +115,6 @@ func getHeaders(fs flat.Fields) []string {
 		jw := weight(tags, j)
 
 		if iw == jw {
-
 			return tags[i] < tags[j]
 		}
 
