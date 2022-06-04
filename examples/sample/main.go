@@ -32,9 +32,10 @@ func main() {
 		// in the given order.
 	}
 
-	c, err := uconfig.Classic(&conf, files)
+	_, err := uconfig.Classic(&conf, files)
+
 	if err != nil {
-		c.Usage()
+		fmt.Println(err)
 		os.Exit(1)
 	}
 

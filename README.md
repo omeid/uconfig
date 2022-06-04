@@ -74,7 +74,10 @@ func main() {
 
   c, err := uconfig.Classic(&conf, confFiles)
   if err != nil {
+    // you could consider printing usage in case of error
+    // like so:
     c.Usage()
+    fmt.Println(err)
     os.Exit(1)
   }
 
@@ -84,7 +87,7 @@ func main() {
 }
 ```
 
-Run this program with a bad flag or value would print out the usage like so:
+Run this program with `-h` or `--lelp` and it would print out the usage:
 
 
 ```

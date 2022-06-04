@@ -1,6 +1,9 @@
 package uconfig
 
 import (
+	"errors"
+	"os"
+
 	"github.com/omeid/uconfig/plugins"
 	"github.com/omeid/uconfig/plugins/defaults"
 	"github.com/omeid/uconfig/plugins/env"
@@ -34,5 +37,12 @@ func Classic(conf interface{}, files Files, userPlugins ...plugins.Plugin) (Conf
 	if err != nil {
 		return c, err
 	}
-	return c, c.Parse()
+
+	err = c.Parse()
+	if errors.Is(err, ErrUsage) {
+		c.Usage()
+		os.Exit(0)
+	}
+
+	return c, err
 }

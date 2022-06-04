@@ -29,9 +29,6 @@ func (f Files) Plugins() []plugins.Plugin {
 			Config{Optional: f.Optional},
 		)
 
-		if fp == nil {
-			continue
-		}
 		ps = append(ps, fp)
 	}
 
@@ -62,18 +59,24 @@ type Config struct {
 // New returns an EnvSet.
 func New(path string, unmarshal Unmarshal, config Config) plugins.Plugin {
 
+	plug := &walker{
+		filepath:  path,
+		unmarshal: unmarshal,
+	}
+
 	src, err := os.Open(path)
+
+	if err == nil {
+		plug.src = src
+	}
 
 	if config.Optional && os.IsNotExist(err) {
 		err = nil
 	}
 
-	return &walker{
-		filepath:  path,
-		src:       src,
-		unmarshal: unmarshal,
-		err:       err,
-	}
+	plug.err = err
+
+	return plug
 }
 
 type walker struct {

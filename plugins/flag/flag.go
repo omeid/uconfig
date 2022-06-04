@@ -2,6 +2,7 @@
 package flag
 
 import (
+	"errors"
 	"flag"
 	"os"
 	"strings"
@@ -52,7 +53,13 @@ type visitor struct {
 }
 
 func (v *visitor) Parse() error {
-	return v.fs.Parse(v.args)
+	err := v.fs.Parse(v.args)
+
+	if errors.Is(err, flag.ErrHelp) {
+		return plugins.ErrUsage
+	}
+
+	return err
 }
 
 func (v *visitor) Visit(fields flat.Fields) error {

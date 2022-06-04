@@ -8,6 +8,8 @@ import (
 	"github.com/omeid/uconfig/plugins"
 )
 
+var ErrUsage = plugins.ErrUsage
+
 // Config is the config manager.
 type Config interface {
 	// Parse will call the parse method of all the added pluginss in the order
@@ -39,7 +41,7 @@ func New(conf interface{}, ps ...plugins.Plugin) (Config, error) {
 
 		err := c.addPlugin(plug)
 		if err != nil {
-			return nil, err
+			return c, err
 		}
 	}
 

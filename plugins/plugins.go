@@ -3,6 +3,7 @@
 package plugins
 
 import (
+	"errors"
 	"log"
 	"runtime"
 
@@ -31,6 +32,10 @@ type Visitor interface {
 }
 
 var tags = map[string]string{}
+
+// ErrUsage is returned when user has request usage message
+// via some plugin, mostly flags.
+var ErrUsage = errors.New("uconfig: usage request")
 
 // RegisterTag allows providers to ensure their tag is unique.
 // they must call this function from an init.

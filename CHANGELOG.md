@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.5
+
+### Breaking Changes
+
+
+#### Classic
+
+Classic now automatically prints usage and exists if user passes `-h` or `--help`.
+
+
+
 ## v0.4
 
 ### Breaking Changes
