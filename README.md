@@ -87,7 +87,7 @@ func main() {
 }
 ```
 
-Run this program with `-h` or `--lelp` and it would print out the usage:
+Run this program with `-h` or `--help` and it would print out the usage:
 
 
 ```
