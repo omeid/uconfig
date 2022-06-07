@@ -40,6 +40,13 @@ func main() {
 	}
 
 	// use conf as you please.
-	fmt.Printf("%#v", conf)
+	// let's pretty print it as JSON for example:
+	configAsJson, err := json.MarshalIndent(conf, "", " ")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	fmt.Print(string(configAsJson))
 
 }

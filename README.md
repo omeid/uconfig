@@ -63,48 +63,74 @@ type Config struct {
 
 func main() {
 
-  conf := &Config{}
+	conf := &Config{}
 
-  confFiles := uconfig.Files{
-     // filepath, Unmarshal func, Optional
-    {"config.json", json.Unmarshal, true}
-    // you can add more files if you like,
-    // they will be applied in the given order.
-  }
+	files := uconfig.Files{
+		{"config.json", json.Unmarshal, true},
+		// you can of course add as many files
+		// as you want, and they will be applied
+		// in the given order.
+	}
 
-  c, err := uconfig.Classic(&conf, confFiles)
-  if err != nil {
-    // you could consider printing usage in case of error
-    // like so:
-    c.Usage()
-    fmt.Println(err)
-    os.Exit(1)
-  }
+	_, err := uconfig.Classic(&conf, files)
 
-  // use conf as you please.
-  fmt.Printf("start with hosts set to: %#v\n", conf.Hosts)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// use conf as you please.
+	// let's pretty print it as JSON for example:
+	configAsJson, err := json.MarshalIndent(conf, "", " ")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	fmt.Print(string(configAsJson))
 
 }
 ```
 
-Run this program with `-h` or `--help` and it would print out the usage:
+Now lets run our program:
 
-
-```
-flag provided but not defined: -x
+```sh
+$ go run main.go -h
 
 Supported Fields:
 FIELD                FLAG                  ENV                  DEFAULT                      USAGE
 -----                -----                 -----                -------                      -----
 Hosts                -hosts                HOSTS                localhost,localhost.local    the ip or domains to bind to
-Redis.Address        -redis-address        REDIS_ADDRESS        redis-master
-Redis.Port           -redis-port           REDIS_PORT           6379
-Redis.Password       -redis-password       REDIS_PASSWORD
-Redis.DB             -redis-db             REDIS_DB             0
-Redis.Expire         -redis-expire         REDIS_EXPIRE         5s
-Database.Address     -database-address     DATABASE_ADDRESS     localhost
-Database.Port        -database-port        DATABASE_PORT        28015
-Database.Database    -database-database    DATABASE_DATABASE    my-project
+Redis.Address        -redis-address        REDIS_ADDRESS        redis-master                 
+Redis.Port           -redis-port           REDIS_PORT           6379                         
+Redis.Password       -redis-password       REDIS_PASSWORD                                    
+Redis.DB             -redis-db             REDIS_DB             0                            
+Redis.Expire         -redis-expire         REDIS_EXPIRE         5s                           
+Database.Address     -database-address     DATABASE_ADDRESS     localhost                    
+Database.Port        -database-port        DATABASE_PORT        28015                        
+Database.Database    -database-database    DATABASE_DATABASE    my-project                   
+
+$ go run main.go 
+
+{
+ "Hosts": [
+  "localhost",
+  "localhost.local"
+ ],
+ "Redis": {
+  "Address": "redis-master",
+  "Port": "6379",
+  "Password": "",
+  "DB": 0,
+  "Expire": 5000000000
+ },
+ "Database": {
+  "Address": "localhost",
+  "Port": "28015",
+  "Database": "my-project"
+ }
+}
+
 ```
 
 
