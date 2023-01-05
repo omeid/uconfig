@@ -265,7 +265,7 @@ func main() {
   // then you can use the secretPlugin with uConfig like any other plugin.
   // Lucky, uconfig.Classic allows passing more plugins, which means
   // you can simply do the following for flags, envs, files, and secrets!
-  _, err := uconfig.Classic(&value, files, secretPlugin)
+  _, err := uconfig.Classic(&conf, files, secretPlugin)
   if err != nil {
     t.Fatal(err)
   }
