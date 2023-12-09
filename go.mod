@@ -1,6 +1,7 @@
 module github.com/omeid/uconfig
 
 retract v1.2.0
+retract v1.2.1
 
 go 1.18
 
