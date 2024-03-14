@@ -30,7 +30,6 @@ func (v *visitor) Visit(f flat.Fields) error {
 		if !ok {
 			continue
 		}
-
 		f.Meta()[tag] = value
 	}
 	return nil

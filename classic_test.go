@@ -51,7 +51,7 @@ func TestClassicBasic(t *testing.T) {
 
 	// set some env vars to test env var and plugin orders.
 	os.Setenv("VERSION", "bad-value-overrided-with-flags")
-	os.Setenv("REDIS_HOST", "from-envs")
+	os.Setenv("REDIS_ADDRESS", "from-envs")
 	// patch the os.Args. for our tests.
 	os.Args = append(os.Args[:1], "-version=from-flags")
 
@@ -118,7 +118,7 @@ func TestClassicWithSecret(t *testing.T) {
 
 	// patch the os.Args. for our tests.
 	os.Args = os.Args[:1]
-	os.Unsetenv("REDIS_HOST")
+	os.Unsetenv("REDIS_ADDRESS")
 
 	_, err := uconfig.Classic(&value, files, secret.New(SecretProvider))
 	if err != nil {

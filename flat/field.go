@@ -2,6 +2,7 @@ package flat
 
 import (
 	"encoding"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -11,7 +12,9 @@ import (
 var _ Field = (*field)(nil)
 
 type field struct {
-	name string
+	name   string
+	prefix string
+
 	meta map[string]string
 
 	tag   reflect.StructTag
@@ -23,8 +26,33 @@ func (f *field) IsBoolFlag() bool {
 	return f.field.Kind() == reflect.Bool
 }
 
-func (f *field) Name() string {
-	return f.name
+func (f *field) getName(tag string) (string, bool) {
+
+	name, explicit := f.Tag(tag)
+
+	if name == "" || name == "." {
+		name = f.name
+		// explicit here means what it is an explicit name or should
+		// be prefixed.
+		explicit = false
+	}
+
+	fmt.Printf("name for tag %s: %s %t\n", tag, name, explicit)
+	if name[0] == '.' {
+		name = name[1:]
+	}
+
+	return name, explicit
+}
+
+func (f *field) Name(tag string) (string, bool) {
+	name, explicit := f.getName(tag)
+
+	if f.prefix == "" || explicit {
+		return name, explicit
+	}
+
+	return f.prefix + "." + name, explicit
 }
 
 func (f *field) Meta() map[string]string {
@@ -32,6 +60,9 @@ func (f *field) Meta() map[string]string {
 }
 
 func (f *field) Tag(key string) (string, bool) {
+	if key == "" {
+		return "", false
+	}
 	return f.tag.Lookup(key)
 }
 

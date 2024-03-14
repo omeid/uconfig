@@ -14,7 +14,7 @@ func TestFlagBasic(t *testing.T) {
 	args := []string{
 		"-gohard",
 		"-version=0.2",
-		"-redis-host=redis-host",
+		"-redis-address=redis-host",
 		"-redis-port=6379",
 		"-rethink-host-address=rethink-cluster",
 		"-rethink-host-port=28015",

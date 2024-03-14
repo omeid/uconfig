@@ -11,6 +11,7 @@ import (
 
 type fNested struct {
 	Pass   string `secret:""`
+	Named  string `secret:"NAME_KEY"`
 	Ignore string
 }
 
@@ -30,7 +31,8 @@ func TestSecret(t *testing.T) {
 		Alt:        "altPassword",
 		EmptyValue: "",
 		Nested: fNested{
-			Pass: "sub-pass",
+			Pass:  "sub-pass",
+			Named: "nested-named",
 		},
 	}
 
@@ -38,11 +40,11 @@ func TestSecret(t *testing.T) {
 		"PASSWORD":    "password",
 		"AltPassword": "altPassword",
 		"NESTED_PASS": "sub-pass",
+		"NAME_KEY":    "nested-named",
 		"EMPTYVALUE":  "",
 	}
 
 	source := func(name string) (string, error) {
-
 		secret, ok := secrets[name]
 		if !ok {
 			return "", fmt.Errorf("couldn't find secret for %s", name)

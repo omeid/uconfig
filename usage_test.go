@@ -18,7 +18,7 @@ FIELD                   FLAG                     ENV                     DEFAULT
 -----                   -----                    -----                   -------    ----------              ------              -----
 Version                 -version                 VERSION                            Version                                     
 GoHard                  -gohard                  GOHARD                             GoHard                                      
-Redis.Host              -redis-host              REDIS_HOST                         Redis.Host                                  
+Redis.Address           -redis-address           REDIS_ADDRESS                      Redis.Address                               
 Redis.Port              -redis-port              REDIS_PORT                         Redis.Port                                  
 Rethink.Host.Address    -rethink-host-address    RETHINK_HOST_ADDRESS               Rethink.Host.Address                        
 Rethink.Host.Port       -rethink-host-port       RETHINK_HOST_PORT                  Rethink.Host.Port                           
@@ -34,7 +34,8 @@ func (*UselessPluginVisitor) Parse() error { return nil }
 
 func (*UselessPluginVisitor) Visit(fields flat.Fields) error {
 	for _, f := range fields {
-		f.Meta()["goodplugin"] = f.Name()
+		name, _ := f.Name("goodplugin")
+		f.Meta()["goodplugin"] = name
 	}
 	return nil
 }

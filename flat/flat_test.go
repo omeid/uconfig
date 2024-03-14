@@ -21,7 +21,7 @@ func TestFlattenNested(t *testing.T) {
 	fields := map[string]bool{
 		"GoHard":               false,
 		"Version":              false,
-		"Redis.Host":           false,
+		"Redis.Address":        false,
 		"Redis.Port":           false,
 		"Rethink.Host.Address": false,
 		"Rethink.Host.Port":    false,
@@ -29,12 +29,13 @@ func TestFlattenNested(t *testing.T) {
 		"Rethink.Password":     false,
 	}
 
-	// for _, fs := range fs {
-	// 	t.Log(" - ", fs.Name())
-	// }
+	for _, fs := range fs {
+		name, explicit := fs.Name("")
+		t.Log(" - ", name, explicit)
+	}
 
 	for _, fs := range fs {
-		name := fs.Name()
+		name, _ := fs.Name("")
 		_, ok := fields[name]
 		if !ok {
 			t.Fatalf("Unexpected Field: %v", name)
@@ -122,7 +123,7 @@ func TestFlattenTypes(t *testing.T) {
 	}
 
 	for _, field := range fs {
-		name := field.Name()
+		name, _ := field.Name("")
 		value, ok := values[name]
 		if !ok {
 			t.Fatalf("Missing value for %v", name)

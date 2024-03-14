@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.7
+
+### Breaking Changes
+
+Field names now can be renamed at struct level instead of globally by prefixing them with a `.`.
+
+So that in the following example, the config Redis.Host will be mapped to Redis.Address
+While Port will be mapped to REDIS_SERVICE_PORT.
+
+
+```go
+type Redis struct {
+  Host string `unconfig:".Address"`
+  Port string `unconfig:"REDIS_SERVICE_PORT"`
+}
+
+
+type Config struct {
+  Redis Redis
+}
+```
+
+
+
+
+## v0.6
+
+Artificial release to retract v1.
+
+
 ## v0.5
 
 ### Breaking Changes
@@ -27,7 +57,7 @@ type Files []struct {
 }
 ```
 
-to 
+to
 
 ```go
 type Files []struct {

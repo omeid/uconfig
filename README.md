@@ -140,17 +140,19 @@ Sometimes you might want to use a different env var, or flag name for backwards 
 
 1. uconfig tag
 
-You can change the name of a field as seen by unconfig.
-This option supports the usual nesting prefixing.
-See the port example below.
+You can change the name of a field as seen by `uconfig`.
+
+Please not that this flag only works for walker plugins (flags, env, anything flat) and for Visitor plugins (file, stream, et al) you will need
+to use encoder specific tags like `json:"field_name"` and so on.
+
 
 2. Plugin specific tags
 
-Most plugins support controlling the field name as seen by that specific plugin.
+Most plugins support controlling the field name as seen by that specific plugin. For example `env:"DB_NAME"`.
 
-This option does not support nesting prefixes.
-See the Database field in the example below.
 
+For both type of tags, you can prefix them with `.` to rename the field only at the struct level.
+See the `Service.Port` and DB_NAME examples below.
 
 ```go
 package database
@@ -158,7 +160,7 @@ package database
 // Config holds the database configurations.
 type Database struct {
   Address  string `default:"localhost"`
-  Port     string `default:"28015" uconfig:"Service.Port"`
+  Port     string `default:"28015" uconfig:".Service.Port"`
   Database string `default:"my-project" env:"DB_NAME" flag:"main-db-name"`
 }
 ```
