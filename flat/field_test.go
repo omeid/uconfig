@@ -24,7 +24,8 @@ func TestField(t *testing.T) {
 
 	firstField := fs[0]
 
-	if name := firstField.Name(); name != "First" {
+	name, _ := firstField.Name("")
+	if name != "First" {
 		t.Errorf("expected First but got %v", name)
 	}
 

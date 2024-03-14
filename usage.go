@@ -45,7 +45,8 @@ func (c *config) Usage() {
 	for _, f := range c.fields {
 
 		values := make([]string, len(headers))
-		values[0] = f.Name()
+		name, _ := f.Name("")
+		values[0] = name
 		for i, header := range headers[1:] {
 			value := f.Meta()[header]
 			values[i+1] = value

@@ -15,7 +15,7 @@ func TestEnvBasic(t *testing.T) {
 	envs := map[string]string{
 		"GOHARD":               "T",
 		"VERSION":              "0.2",
-		"REDIS_HOST":           "redis-host",
+		"REDIS_ADDRESS":        "redis-host",
 		"REDIS_PORT":           "6379",
 		"RETHINK_HOST_ADDRESS": "rethink-cluster",
 		"RETHINK_HOST_PORT":    "28015",

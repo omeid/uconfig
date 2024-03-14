@@ -20,7 +20,7 @@ func init() {
 // ErrorHandling defines how FlagSet.Parse behaves if the parse fails.
 type ErrorHandling flag.ErrorHandling
 
-//  These constants cause FlagSet.Parse to behave as described if the parse fails.
+// These constants cause FlagSet.Parse to behave as described if the parse fails.
 const (
 	ContinueOnError = ErrorHandling(flag.ContinueOnError)
 	ExitOnError     = ErrorHandling(flag.ExitOnError)
@@ -52,6 +52,33 @@ type visitor struct {
 	args []string
 }
 
+func makeFlagName(name string) string {
+	name = strings.Replace(name, ".", "-", -1)
+	name = strings.ToLower(name)
+	return name
+}
+
+func (v *visitor) Visit(fields flat.Fields) error {
+
+	for _, f := range fields {
+		usage, _ := f.Tag("usage")
+
+		name, explicit := f.Name(tag)
+		if name == "-" {
+			continue
+		}
+
+		if !explicit {
+			name = makeFlagName(name)
+		}
+
+		f.Meta()[tag] = "-" + name
+		v.fs.Var(f, name, usage)
+	}
+
+	return nil
+}
+
 func (v *visitor) Parse() error {
 	err := v.fs.Parse(v.args)
 
@@ -60,28 +87,4 @@ func (v *visitor) Parse() error {
 	}
 
 	return err
-}
-
-func (v *visitor) Visit(fields flat.Fields) error {
-
-	for _, f := range fields {
-		usage, _ := f.Tag("usage")
-
-		name, ok := f.Tag(tag)
-		if name == "-" {
-			continue
-		}
-
-		if !ok || name == "" {
-			name = f.Name()
-			name = strings.Replace(name, ".", "-", -1)
-			name = strings.ToLower(name)
-		}
-
-		f.Meta()[tag] = "-" + name
-		v.fs.Var(f, name, usage)
-	}
-
-	return nil
-
 }
