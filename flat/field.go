@@ -2,7 +2,6 @@ package flat
 
 import (
 	"encoding"
-	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -37,7 +36,6 @@ func (f *field) getName(tag string) (string, bool) {
 		explicit = false
 	}
 
-	fmt.Printf("name for tag %s: %s %t\n", tag, name, explicit)
 	if name[0] == '.' {
 		name = name[1:]
 	}
@@ -199,6 +197,14 @@ func (f *field) setSlice(value string) error {
 
 func setSliceElem(elem reflect.Type) func(reflect.Value, string) error {
 
+	if elem.Implements(textUnmarshalerType) {
+		return setSliceElemUnmarshale
+	}
+
+	if reflect.PointerTo(elem).Implements(textUnmarshalerType) {
+		return setSliceElemPtrUnmarshale
+	}
+
 	switch elem.Kind() {
 
 	case reflect.String:
@@ -218,6 +224,34 @@ func setSliceElem(elem reflect.Type) func(reflect.Value, string) error {
 		return setSliceElemFloat
 	}
 
+	return nil
+}
+
+func setSliceElemUnmarshale(f reflect.Value, value string) error {
+	ptr := reflect.New(f.Type().Elem())
+
+	ut := ptr.MethodByName("UnmarshalText")
+	err := ut.Call([]reflect.Value{reflect.ValueOf([]byte(value))})[0]
+
+	if !err.IsNil() {
+		return err.Interface().(error)
+	}
+
+	f.Set(ptr)
+	return nil
+}
+
+func setSliceElemPtrUnmarshale(f reflect.Value, value string) error {
+	ptr := reflect.New(f.Type())
+
+	ut := ptr.MethodByName("UnmarshalText")
+	err := ut.Call([]reflect.Value{reflect.ValueOf([]byte(value))})[0]
+
+	if !err.IsNil() {
+		return err.Interface().(error)
+	}
+
+	f.Set(reflect.Indirect(ptr))
 	return nil
 }
 

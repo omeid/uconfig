@@ -1,6 +1,7 @@
 package flat_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -79,7 +80,9 @@ func TestFlattenTypes(t *testing.T) {
 		"SliceFloat32":  "1.2,3.4, 5.6",
 		"SliceDuration": "5s, 1h",
 
-		"SliceTextUnmarshaler": "a.b.c",
+		"SliceTextUnmarshaler":    "a.b.c",
+		"SliceElemUnmarshaler":    "north,east,south,west",
+		"SliceElemPtrUnmarshaler": "north,east,south,west",
 	}
 
 	expect := f.Types{
@@ -110,6 +113,14 @@ func TestFlattenTypes(t *testing.T) {
 		SliceDuration: []time.Duration{5 * time.Second, 1 * time.Hour},
 
 		SliceTextUnmarshaler: &f.TextUnmarshalerStringSlice{"a", "b", "c"},
+		SliceElemUnmarshaler: f.ElemUnmarshalerSlice{0, 90, 180, 270},
+
+		SliceElemPtrUnmarshaler: f.ElemPtrUnmarshalerSlice{
+			f.NewReadableDirection(0),
+			f.NewReadableDirection(90),
+			f.NewReadableDirection(180),
+			f.NewReadableDirection(270),
+		},
 	}
 
 	value := f.Types{}
@@ -124,11 +135,13 @@ func TestFlattenTypes(t *testing.T) {
 
 	for _, field := range fs {
 		name, _ := field.Name("")
+
 		value, ok := values[name]
 		if !ok {
 			t.Fatalf("Missing value for %v", name)
 		}
 
+		fmt.Printf("Mapping field %s: %s\n", name, value)
 		err := field.Set(value)
 
 		if err != nil {
