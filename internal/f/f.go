@@ -48,8 +48,37 @@ func (l *TextUnmarshalerStringSlice) UnmarshalText(value []byte) error {
 	return nil
 }
 
+type ReadableDirection int
+
+func NewReadableDirection(value int) *ReadableDirection {
+	dir := ReadableDirection(value)
+	return &dir
+}
+
+// UnmarshalText is part of encoding.TextUnmarshaler
+func (l *ReadableDirection) UnmarshalText(value []byte) error {
+	switch string(value) {
+	case "north":
+		*l = ReadableDirection(0)
+	case "east":
+		*l = ReadableDirection(90)
+	case "south":
+		*l = ReadableDirection(180)
+	case "west":
+		*l = ReadableDirection(270)
+	default:
+		*l = ReadableDirection(0)
+	}
+
+	return nil
+}
+
+type ElemUnmarshalerSlice []ReadableDirection
+type ElemPtrUnmarshalerSlice []*ReadableDirection
+
 // ensure the interfae is implemented properly.
 var _ encoding.TextUnmarshaler = &TextUnmarshalerStringSlice{}
+var _ encoding.TextUnmarshaler = NewReadableDirection(0)
 
 // Types is part of text fixtures.
 type Types struct {
@@ -78,5 +107,7 @@ type Types struct {
 	SliceFloat32  []float32
 	SliceDuration []time.Duration
 
-	SliceTextUnmarshaler *TextUnmarshalerStringSlice
+	SliceTextUnmarshaler    *TextUnmarshalerStringSlice
+	SliceElemUnmarshaler    ElemUnmarshalerSlice
+	SliceElemPtrUnmarshaler ElemPtrUnmarshalerSlice
 }
