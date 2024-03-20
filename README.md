@@ -3,7 +3,9 @@
 
 Lightweight, zero-dependency, and extendable configuration management.
 
-uConfig is extremely light and extendable configuration management library with zero dependencies. Every aspect of configuration is provided through a _plugin_, which means you can have any combination of flags, environment variables, defaults, secret providers, Kubernetes Downward API, and what you want, and only what you want, through plugins.
+uConfig is extremely light and extendable configuration management and command line library.
+
+uConfig configuration is provided through  _plugin_s, which means you can have any combination of flags, environment variables, defaults, secret providers, Kubernetes Downward API, and what you want, and only what you want, through plugins.
 
 
 uConfig takes the config schema as a struct decorated with tags, nesting is supported.
@@ -305,6 +307,44 @@ func TestSomething(t *testing.T) error {
 See the Classic source for how to compose plugins.
 For more details, see the [godoc](https://godoc.org/github.com/omeid/uconfig).
 
+
+## Commands
+
+uConfig also supports adding commands to your program. See the example below:
+
+```go
+
+func main() {
+
+	files := uconfig.Files{
+		{"config.json", json.Unmarshal, true},
+	}
+
+	mainFunc := func(conf Config) error {
+		// use conf as you please.
+		// let's pretty print it as JSON for example:
+		configAsJson, err := json.MarshalIndent(conf, "", " ")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Print(string(configAsJson))
+		return nil
+	}
+
+	destroyFunc := func(conf struct{}) error {
+		fmt.Println("Running destroy with no config")
+		return nil
+	}
+
+	err := uconfig.Commands(
+		uconfig.ClassicCommand("", mainFunc, files),
+		uconfig.ClassicCommand("destroy", destroyFunc, nil),
+	)
+
+}
+```
 ## Extending uConfig:
 
 uConfig provides a plugin mechanism for adding new sources of configuration.

@@ -25,6 +25,10 @@ type Config interface {
 
 // New returns a new Config. The conf must be a pointer to a struct.
 func New(conf interface{}, ps ...plugins.Plugin) (Config, error) {
+	return newConfig(conf, ps)
+}
+
+func newConfig(conf interface{}, ps []plugins.Plugin) (*config, error) {
 	fields, err := flat.View(conf)
 
 	c := &config{

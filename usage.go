@@ -24,39 +24,62 @@ var UsageOutput io.Writer = os.Stdout
 // Usage prints out the current config fields, flags, env vars
 // and any other source and setting.
 func (c *config) Usage() {
+	c.usage(nil)
+}
 
+func (c *config) usage(command *string) {
 	setUsageMeta(c.fields)
 	headers := getHeaders(c.fields)
 
 	w := tabwriter.NewWriter(UsageOutput, 0, 0, 4, ' ', 0)
-	fmt.Fprintf(w, "\nSupported Fields:\n")
-	fmt.Fprintln(w, strings.ToUpper(strings.Join(headers, "\t")))
 
-	dashes := make([]string, len(headers))
-	for i, f := range headers {
-		n := len(f)
-		if n < 5 {
-			n = 5
+	if command == nil {
+		fmt.Fprintf(w, "\nSupported Fields:")
+	} else {
+		name := *command
+		if name == "" {
+			name = "default"
 		}
-		dashes[i] = strings.Repeat("-", n)
-	}
-	fmt.Fprintln(w, strings.Join(dashes, "\t"))
-
-	for _, f := range c.fields {
-
-		values := make([]string, len(headers))
-		name, _ := f.Name("")
-		values[0] = name
-		for i, header := range headers[1:] {
-			value := f.Meta()[header]
-			values[i+1] = value
-		}
-
-		fmt.Fprintln(w, strings.Join(values, "\t"))
+		fmt.Fprintf(w, "\n[%s] Supported Fields:", name)
 	}
 
+	if len(c.fields) == 0 {
+		fmt.Fprintf(w, " no configuration supported.")
+	} else {
+
+		fmt.Fprintf(w, "\n")
+		dashes := make([]string, len(headers))
+		for i, f := range headers {
+			n := len(f)
+			if n < 5 {
+				n = 5
+			}
+			dashes[i] = strings.Repeat("-", n)
+		}
+
+		fmt.Fprintln(w, strings.ToUpper(strings.Join(headers, "\t")))
+		fmt.Fprintln(w, strings.Join(dashes, "\t"))
+
+		for _, f := range c.fields {
+
+			headersCount := len(headers)
+
+			values := make([]string, headersCount)
+
+			name, _ := f.Name("")
+			values[0] = name
+
+			for i, header := range headers[1:] {
+				value := f.Meta()[header]
+				values[i+1] = value
+			}
+
+			fmt.Fprintln(w, strings.Join(values, "\t"))
+		}
+	}
+
+	fmt.Fprintf(w, "\n")
 	err := w.Flush()
-
 	if err != nil {
 		// we are asked for usage which means it is interactive use
 		// and so panicing is acceptable.

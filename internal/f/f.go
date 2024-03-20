@@ -57,6 +57,7 @@ func NewReadableDirection(value int) *ReadableDirection {
 
 // UnmarshalText is part of encoding.TextUnmarshaler
 func (l *ReadableDirection) UnmarshalText(value []byte) error {
+
 	switch string(value) {
 	case "north":
 		*l = ReadableDirection(0)
