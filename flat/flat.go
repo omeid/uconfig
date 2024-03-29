@@ -30,7 +30,10 @@ type Field interface {
 
 	String() string
 	Set(string) error
-	IsZero() bool
+
+	// returns the Ptr to this value.
+	// It is used by complex decoders like uconfig-cue.
+	Ptr() interface{}
 }
 
 var caser = cases.Title(language.Und, cases.NoLower)

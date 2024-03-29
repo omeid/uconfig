@@ -70,8 +70,16 @@ func (f *field) String() string {
 	return f.tag.Get("default")
 }
 
-func (f *field) IsZero() bool {
-	return f.field.IsValid() && f.field.IsZero()
+func (f *field) Ptr() interface{} {
+	if f.field.Kind() == reflect.Ptr || f.field.Kind() == reflect.Interface {
+		return f.field.Interface()
+	}
+
+	ptr := reflect.New(f.field.Type())
+	ptr.Elem().Set(f.field)
+
+	// Return the new pointer as an interface{}
+	return ptr.Interface()
 }
 
 var textUnmarshalerType = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()

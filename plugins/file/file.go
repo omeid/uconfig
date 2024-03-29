@@ -3,7 +3,6 @@ package file
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/omeid/uconfig/plugins"
@@ -107,7 +106,7 @@ func (v *walker) Parse() error {
 		return nil
 	}
 
-	src, err := ioutil.ReadAll(v.src)
+	src, err := io.ReadAll(v.src)
 	if err != nil {
 		return err
 	}
