@@ -48,8 +48,9 @@ func Standard() plugins.Plugin {
 var _ plugins.Visitor = (*visitor)(nil)
 
 type visitor struct {
-	fs   *flag.FlagSet
-	args []string
+	fs      *flag.FlagSet
+	args    []string
+	command flat.Field
 }
 
 func makeFlagName(name string) string {
@@ -61,9 +62,9 @@ func makeFlagName(name string) string {
 func (v *visitor) Visit(fields flat.Fields) error {
 
 	for _, f := range fields {
-		usage, _ := f.Tag("usage")
 
 		name, explicit := f.Name(tag)
+
 		if name == "-" {
 			continue
 		}
@@ -72,15 +73,50 @@ func (v *visitor) Visit(fields flat.Fields) error {
 			name = makeFlagName(name)
 		}
 
-		f.Meta()[tag] = "-" + name
-		v.fs.Var(f, name, usage)
+		opts, _ := f.Tag(tag)
+		_, opts, _ = strings.Cut(opts, ",")
+		if strings.Contains(opts, "command") {
+			v.command = f
+			f.Meta()[tag] = "[command]"
+		} else {
+			usage, _ := f.Tag("usage")
+			f.Meta()[tag] = "-" + name
+			v.fs.Var(f, name, usage)
+		}
 	}
 
 	return nil
 }
 
+func extraCommand(args []string) (string, []string) {
+	if len(args) == 0 {
+		return "", args
+	}
+
+	command := args[0]
+
+	if command != "" && command[0] == '-' {
+		return "", args
+	}
+
+	return args[0], args[1:]
+}
+
 func (v *visitor) Parse() error {
-	err := v.fs.Parse(v.args)
+
+	args := v.args
+
+	if v.command != nil {
+		var command string
+		command, args = extraCommand(args)
+
+		err := v.command.Set(command)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := v.fs.Parse(args)
 
 	if errors.Is(err, flag.ErrHelp) {
 		return plugins.ErrUsage

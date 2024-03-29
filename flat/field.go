@@ -29,6 +29,8 @@ func (f *field) getName(tag string) (string, bool) {
 
 	name, explicit := f.Tag(tag)
 
+	name, _, _ = strings.Cut(name, ",")
+
 	if name == "" || name == "." {
 		name = f.name
 		// explicit here means what it is an explicit name or should

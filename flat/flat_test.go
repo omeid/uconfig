@@ -20,6 +20,7 @@ func TestFlattenNested(t *testing.T) {
 	}
 
 	fields := map[string]bool{
+		"Command":              false,
 		"GoHard":               false,
 		"Version":              false,
 		"Redis.Address":        false,

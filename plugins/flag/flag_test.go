@@ -97,3 +97,80 @@ func TestFlagTag(t *testing.T) {
 	}
 
 }
+
+type fCli struct {
+	Command string `flag:",command"`
+	Address string `flag:"host"`
+}
+
+func TestFlagTagCommand(t *testing.T) {
+
+	args := []string{
+		"run",
+		"-host=https://blah.bleh",
+	}
+
+	expect := fCli{
+		Command: "run",
+		Address: "https://blah.bleh",
+	}
+
+	value := fCli{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+
+}
+
+type fCliRename struct {
+	Mode    string `flag:",command"`
+	Command string `flag:"command"`
+	Address string `flag:"host"`
+}
+
+func TestFlagTagCommandRename(t *testing.T) {
+
+	args := []string{
+		"disco",
+		"-command=dance",
+	}
+
+	expect := fCliRename{
+		Mode:    "disco",
+		Command: "dance",
+	}
+
+	value := fCliRename{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+
+}
