@@ -174,3 +174,64 @@ func TestFlagTagCommandRename(t *testing.T) {
 	}
 
 }
+
+type fCliDefault struct {
+	Mode string `flag:",command" default:"run"`
+}
+
+func TestFlagTagCommandDefault(t *testing.T) {
+
+	args := []string{}
+
+	expect := fCliDefault{
+		Mode: "run",
+	}
+
+	value := fCliDefault{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+
+}
+func TestFlagTagCommandDefaultOverride(t *testing.T) {
+
+	args := []string{"walk"}
+
+	expect := fCliDefault{
+		Mode: "walk",
+	}
+
+	value := fCliDefault{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+
+}
