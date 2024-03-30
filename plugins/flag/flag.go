@@ -4,7 +4,9 @@ package flag
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/omeid/uconfig/flat"
@@ -59,6 +61,23 @@ func makeFlagName(name string) string {
 	return name
 }
 
+type fieldFlag struct {
+	flat.Field
+}
+
+func (ff *fieldFlag) String() string {
+	if ff == nil {
+		return ""
+	}
+
+	return fmt.Sprintf("%s", ff.Field.Interface())
+}
+
+// Used by standard library flag package.
+func (f *fieldFlag) IsBoolFlag() bool {
+	return reflect.ValueOf(f.Field.Interface()).Kind() == reflect.Bool
+}
+
 func (v *visitor) Visit(fields flat.Fields) error {
 
 	for _, f := range fields {
@@ -81,7 +100,7 @@ func (v *visitor) Visit(fields flat.Fields) error {
 		} else {
 			usage, _ := f.Tag("usage")
 			f.Meta()[tag] = "-" + name
-			v.fs.Var(f, name, usage)
+			v.fs.Var(&fieldFlag{f}, name, usage)
 		}
 	}
 

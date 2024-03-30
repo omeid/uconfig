@@ -28,7 +28,7 @@ type Field interface {
 
 	Meta() map[string]string
 
-	String() string
+	Interface() interface{}
 	Set(string) error
 
 	// returns the Ptr to this value.

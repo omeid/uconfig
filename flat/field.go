@@ -20,11 +20,6 @@ type field struct {
 	field reflect.Value
 }
 
-// Used by standard library flag package.
-func (f *field) IsBoolFlag() bool {
-	return f.field.Kind() == reflect.Bool
-}
-
 func (f *field) getName(tag string) (string, bool) {
 
 	name, explicit := f.Tag(tag)
@@ -66,20 +61,19 @@ func (f *field) Tag(key string) (string, bool) {
 	return f.tag.Lookup(key)
 }
 
-func (f *field) String() string {
-	return f.tag.Get("default")
+func (f *field) Interface() interface{} {
+	return f.field.Interface()
 }
 
 func (f *field) Ptr() interface{} {
-	if f.field.Kind() == reflect.Ptr || f.field.Kind() == reflect.Interface {
+
+	kind := f.field.Kind()
+
+	if kind == reflect.Pointer || kind == reflect.Slice || kind == reflect.Interface {
 		return f.field.Interface()
 	}
 
-	ptr := reflect.New(f.field.Type())
-	ptr.Elem().Set(f.field)
-
-	// Return the new pointer as an interface{}
-	return ptr.Interface()
+	return f.field.Addr().Interface()
 }
 
 var textUnmarshalerType = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()

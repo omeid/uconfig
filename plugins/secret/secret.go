@@ -2,7 +2,6 @@
 package secret
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/omeid/uconfig/flat"
@@ -51,7 +50,6 @@ func (v *secret) Visit(f flat.Fields) error {
 			name = makeSecretName(name)
 		}
 
-		fmt.Printf("Secret name %s %t\n", name, explicit)
 		f.Meta()[tag] = name
 	}
 
@@ -66,8 +64,6 @@ func (v *secret) Parse() error {
 			continue
 		}
 
-		n, _ := f.Name(tag)
-		fmt.Printf("Looking up password for %s: %s\n", name, n)
 		value, err := v.source(name)
 
 		if err != nil {
