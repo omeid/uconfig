@@ -107,18 +107,18 @@ func (v *visitor) Visit(fields flat.Fields) error {
 	return nil
 }
 
-func extraCommand(def string, args []string) (string, []string) {
+func extraCommand(args []string) (string, []string, bool) {
 	if len(args) == 0 {
-		return def, args
+		return "", args, false
 	}
 
 	command := args[0]
 
 	if command != "" && command[0] == '-' {
-		return def, args
+		return "", args, false
 	}
 
-	return args[0], args[1:]
+	return command, args[1:], command != ""
 }
 
 func (v *visitor) Parse() error {
@@ -128,12 +128,14 @@ func (v *visitor) Parse() error {
 	if v.command != nil {
 		var command string
 
-		def, _ := v.command.Tag("default")
-		command, args = extraCommand(def, args)
+		var set bool
+		command, args, set = extraCommand(args)
 
-		err := v.command.Set(command)
-		if err != nil {
-			return err
+		if set {
+			err := v.command.Set(command)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

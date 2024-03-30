@@ -148,3 +148,25 @@ func TestClassicBadPlugin(t *testing.T) {
 	}
 
 }
+
+func TestClassicCommand(t *testing.T) {
+
+	expect := f.Config{
+		Command: "run",
+	}
+
+	value := f.Config{}
+
+	// set some env vars to test env var and plugin orders.
+	os.Unsetenv("VERSION")
+
+	_, err := uconfig.Classic(&value, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+
+}

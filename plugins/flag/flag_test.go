@@ -187,7 +187,9 @@ func TestFlagTagCommandDefault(t *testing.T) {
 		Mode: "run",
 	}
 
-	value := fCliDefault{}
+	value := fCliDefault{
+		Mode: "run",
+	}
 
 	fs := flag.New("testing", flag.PanicOnError, args)
 
@@ -215,7 +217,40 @@ func TestFlagTagCommandDefaultOverride(t *testing.T) {
 		Mode: "walk",
 	}
 
-	value := fCliDefault{}
+	value := fCliDefault{
+		Mode: "fast",
+	}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+
+}
+
+func TestFlagTagCommandDefaultOverrideEmpty(t *testing.T) {
+
+	args := []string{""}
+
+	expect := fCliDefault{
+		Mode: "walk",
+	}
+
+	value := fCliDefault{
+		Mode: "walk",
+	}
 
 	fs := flag.New("testing", flag.PanicOnError, args)
 

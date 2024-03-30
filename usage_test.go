@@ -16,7 +16,7 @@ const expectedUsageMessage = `
 Supported Fields:
 FIELD                   FLAG                     ENV                     DEFAULT    GOODPLUGIN              SECRET              USAGE
 -----                   -----                    -----                   -------    ----------              ------              -----
-Command                 [command]                COMMAND                            Command                                     
+Command                 [command]                COMMAND                 run        Command                                     
 Version                 -version                 VERSION                            Version                                     
 GoHard                  -gohard                  GOHARD                             GoHard                                      
 Redis.Address           -redis-address           REDIS_ADDRESS                      Redis.Address                               

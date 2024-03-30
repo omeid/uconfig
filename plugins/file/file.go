@@ -21,7 +21,6 @@ type Files []struct {
 func (f Files) Plugins() []plugins.Plugin {
 	ps := make([]plugins.Plugin, 0, len(f))
 	for _, f := range f {
-
 		fp := New(
 			f.Path,
 			f.Unmarshal,

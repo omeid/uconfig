@@ -14,6 +14,7 @@ import (
 func TestFiles(t *testing.T) {
 
 	expect := f.Config{
+		Command: "run-file",
 		Anon: f.Anon{
 			Version: "0.2",
 		},
@@ -37,6 +38,7 @@ func TestFiles(t *testing.T) {
 	files := file.Files{
 		{"testdata/config_rethink.json", json.Unmarshal, true},
 		{"testdata/config_partial.json", json.Unmarshal, true},
+		{"testdata/.local.json", json.Unmarshal, false},
 	}
 
 	value := f.Config{}

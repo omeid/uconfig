@@ -33,7 +33,7 @@ type Redis struct {
 
 // Config is part of text fixtures.
 type Config struct {
-	Command string `flag:",command"` // expose this as the cli command.
+	Command string `flag:",command" default:"run"` // expose this as the cli command.
 	Anon
 	GoHard  bool
 	Redis   Redis

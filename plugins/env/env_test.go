@@ -13,6 +13,7 @@ import (
 func TestEnvBasic(t *testing.T) {
 
 	envs := map[string]string{
+		"COMMAND":              "start",
 		"GOHARD":               "T",
 		"VERSION":              "0.2",
 		"REDIS_ADDRESS":        "redis-host",
@@ -23,6 +24,7 @@ func TestEnvBasic(t *testing.T) {
 	}
 
 	expect := f.Config{
+		Command: "start",
 		Anon: f.Anon{
 			Version: "0.2",
 		},
