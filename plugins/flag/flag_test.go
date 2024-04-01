@@ -270,3 +270,91 @@ func TestFlagTagCommandDefaultOverrideEmpty(t *testing.T) {
 	}
 
 }
+
+type fCliRequired struct {
+	Command string `flag:",required,command"`
+	Mode    string `flag:",required"`
+}
+
+func TestFlagRequiredMissing(t *testing.T) {
+
+	args := []string{}
+
+	value := fCliRequired{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err == nil {
+		t.Fatal("Expected error for missing required failed got nil")
+	}
+
+	expect := "Missing required flag: [command]\nMissing required flag: mode"
+
+	if err.Error() != expect {
+		t.Errorf("expected (%s) but got (%s)", expect, err)
+	}
+
+}
+
+func TestFlagRequiredMissingCommand(t *testing.T) {
+
+	args := []string{"-mode=slow"}
+
+	value := fCliRequired{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err == nil {
+		t.Fatal("Expected error for missing required failed got nil")
+	}
+
+	expect := "Missing required flag: [command]"
+
+	if err.Error() != expect {
+		t.Errorf("expected (%s) but got (%s)", expect, err)
+	}
+
+}
+
+func TestFlagRequiredOkay(t *testing.T) {
+
+	args := []string{"-mode=happy", "run"}
+
+	value := fCliRequired{}
+	expect := fCliRequired{Mode: "happy", Command: "run"}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+
+}

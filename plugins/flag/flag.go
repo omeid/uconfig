@@ -14,6 +14,7 @@ import (
 )
 
 const tag = "flag"
+const commandFieldName = "[command]"
 
 func init() {
 	plugins.RegisterTag(tag)
@@ -36,8 +37,9 @@ func New(name string, errorHandling ErrorHandling, args []string) plugins.Plugin
 	fs.Usage = func() {}
 
 	return &visitor{
-		fs:   fs,
-		args: args,
+		fs:          fs,
+		args:        args,
+		requiredSet: map[string]bool{},
 	}
 }
 
@@ -53,6 +55,8 @@ type visitor struct {
 	fs      *flag.FlagSet
 	args    []string
 	command flat.Field
+
+	requiredSet map[string]bool
 }
 
 func makeFlagName(name string) string {
@@ -94,13 +98,25 @@ func (v *visitor) Visit(fields flat.Fields) error {
 
 		opts, _ := f.Tag(tag)
 		_, opts, _ = strings.Cut(opts, ",")
+
+		required := strings.Contains(opts, "required")
+
 		if strings.Contains(opts, "command") {
 			v.command = f
-			f.Meta()[tag] = "[command]"
+			name := commandFieldName
+			f.Meta()[tag] = name
+			if required {
+				v.requiredSet[name] = false
+			}
 		} else {
 			usage, _ := f.Tag("usage")
-			f.Meta()[tag] = "-" + name
 			v.fs.Var(&fieldFlag{f}, name, usage)
+			if required {
+				v.requiredSet[name] = false
+			}
+
+			name := "-" + name
+			f.Meta()[tag] = name
 		}
 	}
 
@@ -138,7 +154,10 @@ func (v *visitor) Parse() error {
 			if err != nil {
 				return err
 			}
+			// we have visissted the command.
+			v.requiredSet[commandFieldName] = true
 		}
+
 	}
 
 	err := v.fs.Parse(args)
@@ -147,5 +166,23 @@ func (v *visitor) Parse() error {
 		return plugins.ErrUsage
 	}
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	v.fs.Visit(func(f *flag.Flag) {
+		v.requiredSet[f.Name] = true
+	})
+
+	for field, set := range v.requiredSet {
+		if !set {
+			err = errors.Join(err, errors.New("Missing required flag: "+field))
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
