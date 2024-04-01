@@ -8,5 +8,6 @@ go 1.18
 
 require (
 	github.com/google/go-cmp v0.5.8
+	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
 	golang.org/x/text v0.14.0
 )

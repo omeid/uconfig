@@ -271,6 +271,37 @@ func TestFlagTagCommandDefaultOverrideEmpty(t *testing.T) {
 
 }
 
+func TestFlagTagCommandMissing(t *testing.T) {
+
+	args := []string{""}
+
+	expect := fCliDefault{
+		Mode: "walk",
+	}
+
+	value := fCliDefault{
+		Mode: "walk",
+	}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+
+}
+
 type fCliRequired struct {
 	Command string `flag:",required,command"`
 	Mode    string `flag:",required"`
@@ -306,7 +337,7 @@ func TestFlagRequiredMissing(t *testing.T) {
 
 func TestFlagRequiredMissingCommand(t *testing.T) {
 
-	args := []string{"-mode=slow"}
+	args := []string{"-mode", "slow"}
 
 	value := fCliRequired{}
 
@@ -328,6 +359,41 @@ func TestFlagRequiredMissingCommand(t *testing.T) {
 
 	if err.Error() != expect {
 		t.Errorf("expected (%s) but got (%s)", expect, err)
+	}
+
+}
+
+type fCliBool struct {
+	Command string `flag:",command"`
+	Fast    bool
+}
+
+func TestFlagCommandAfterBool(t *testing.T) {
+
+	args := []string{"-fast", "jump"}
+
+	value := fCliBool{}
+	expect := fCliBool{
+		Command: "jump",
+		Fast:    true,
+	}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
 	}
 
 }

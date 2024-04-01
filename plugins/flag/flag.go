@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/plugins"
+	"golang.org/x/exp/maps"
 )
 
 const tag = "flag"
@@ -52,10 +54,11 @@ func Standard() plugins.Plugin {
 var _ plugins.Visitor = (*visitor)(nil)
 
 type visitor struct {
-	fs      *flag.FlagSet
-	args    []string
-	command flat.Field
+	fs   *flag.FlagSet
+	args []string
 
+	fields      []flat.Field
+	command     flat.Field
 	requiredSet map[string]bool
 }
 
@@ -73,7 +76,6 @@ func (ff *fieldFlag) String() string {
 	if ff == nil {
 		return ""
 	}
-
 	return fmt.Sprintf("%s", ff.Field.Interface())
 }
 
@@ -84,7 +86,9 @@ func (f *fieldFlag) IsBoolFlag() bool {
 
 func (v *visitor) Visit(fields flat.Fields) error {
 
-	for _, f := range fields {
+	v.fields = fields
+
+	for _, f := range v.fields {
 
 		name, explicit := f.Name(tag)
 
@@ -123,7 +127,7 @@ func (v *visitor) Visit(fields flat.Fields) error {
 	return nil
 }
 
-func extraCommand(args []string) (string, []string, bool) {
+func extraCommand(args []string, fields flat.Fields) (string, []string, bool) {
 	lastIndex := len(args) - 1
 
 	if lastIndex < 0 {
@@ -134,6 +138,28 @@ func extraCommand(args []string) (string, []string, bool) {
 
 	if command != "" && command[0] == '-' {
 		return "", args, false
+	}
+
+	// only a command, return it.
+	if lastIndex == 0 {
+		return command, args[:lastIndex], command != ""
+	}
+
+	if parg := args[lastIndex-1]; parg != "" && parg[0] == '-' && !strings.Contains(parg, "=") {
+
+		// so a flag
+		var prevArgIsBool bool
+
+		for _, field := range fields {
+			if field.Meta()[tag] == parg {
+				_, prevArgIsBool = field.Interface().(bool)
+				break
+			}
+		}
+
+		if !prevArgIsBool {
+			return "", args, false
+		}
 	}
 
 	return command, args[:lastIndex], command != ""
@@ -147,7 +173,7 @@ func (v *visitor) Parse() error {
 		var command string
 
 		var set bool
-		command, args, set = extraCommand(args)
+		command, args, set = extraCommand(args, v.fields)
 
 		if set {
 			err := v.command.Set(command)
@@ -174,8 +200,12 @@ func (v *visitor) Parse() error {
 		v.requiredSet[f.Name] = true
 	})
 
-	for field, set := range v.requiredSet {
-		if !set {
+	// get stable error messages.
+	fields := maps.Keys(v.requiredSet)
+	slices.Sort(fields)
+
+	for _, field := range fields {
+		if !v.requiredSet[field] {
 			err = errors.Join(err, errors.New("Missing required flag: "+field))
 		}
 	}
