@@ -40,13 +40,14 @@ func TestMustPanic(t *testing.T) {
 		}
 	}()
 
-	open, err := os.Open("testdata/classic.json")
+	filepath := "testdata/classic.json"
+	open, err := os.Open(filepath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	open.Close() // close it so we get an error!
-	reader := file.NewReader(open, json.Unmarshal)
+	reader := file.NewReader(open, filepath, json.Unmarshal)
 
 	var buf bytes.Buffer
 	uconfig.UsageOutput = &buf

@@ -3,6 +3,7 @@ package file_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -68,7 +69,7 @@ func TestFileReader(t *testing.T) {
 
 		value := f.Config{}
 
-		conf, err := uconfig.New(&value, file.NewReader(tc.Source, tc.Unmarshall))
+		conf, err := uconfig.New(&value, file.NewReader(tc.Source, "[stream]", tc.Unmarshall))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -175,7 +176,7 @@ func TestMulti(t *testing.T) {
 		}
 	}`
 
-	reader := file.NewReader(bytes.NewReader([]byte(srcJSON)), json.Unmarshal)
+	reader := file.NewReader(bytes.NewReader([]byte(srcJSON)), "[stream]", json.Unmarshal)
 	open := file.New("testdata/config_rethink.json", json.Unmarshal, file.Config{})
 
 	value := f.Config{}
@@ -197,13 +198,14 @@ func TestMulti(t *testing.T) {
 
 func TestBadFile(t *testing.T) {
 
-	open, err := os.Open("testdata/config_rethink.json")
+	filepath := "testdata/config_rethink.json"
+	open, err := os.Open(filepath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	open.Close() // close it so we get an error!
-	reader := file.NewReader(open, json.Unmarshal)
+	reader := file.NewReader(open, filepath, json.Unmarshal)
 
 	value := f.Config{}
 	conf, err := uconfig.New(&value, reader)
@@ -217,6 +219,34 @@ func TestBadFile(t *testing.T) {
 	}
 
 	if err.Error() != "read testdata/config_rethink.json: file already closed" {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestBadFileContent(t *testing.T) {
+
+	filepath := "testdata/broken_json.json"
+	open, err := os.Open(filepath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	reader := file.NewReader(open, filepath, json.Unmarshal)
+
+	value := f.Config{}
+	conf, err := uconfig.New(&value, reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = conf.Parse()
+
+	if err == nil {
+		t.Errorf("expected error but got nil")
+	}
+
+	expect := "testdata/broken_json.json\ninvalid character 'i' looking for beginning of value"
+	if err.Error() != expect {
+		fmt.Println(err)
 		t.Errorf("Unexpected error: %v", err)
 	}
 }

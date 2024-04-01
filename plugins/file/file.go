@@ -2,6 +2,7 @@
 package file
 
 import (
+	"errors"
 	"io"
 	"os"
 
@@ -40,9 +41,10 @@ type Unmarshal func(src []byte, v interface{}) error
 // NewReader returns a uconfig plugin that unmarshals the content of
 // the provided io.Reader into the config using the provided unmarshal
 // function. The src will be closed if it is an io.Closer.
-func NewReader(src io.Reader, unmarshal Unmarshal) plugins.Plugin {
+func NewReader(src io.Reader, filepath string, unmarshal Unmarshal) plugins.Plugin {
 	return &walker{
 		src:       src,
+		filepath:  filepath,
 		unmarshal: unmarshal,
 	}
 
@@ -86,36 +88,45 @@ type walker struct {
 	err error
 }
 
-func (v *walker) Walk(conf interface{}) error {
-	if v.err != nil {
-		return v.err
+func (w *walker) Walk(conf interface{}) error {
+	if w.err != nil {
+		return w.err
 	}
 
-	v.conf = conf
-	return v.err
+	w.conf = conf
+	return w.err
 }
 
-func (v *walker) Parse() error {
+var ErrEncodingFailed = errors.New("failed to decoder file")
 
-	if v.err != nil {
-		return v.err
+func (w *walker) Parse() error {
+
+	if w.err != nil {
+		return w.err
 	}
 
-	if v.src == nil {
+	if w.src == nil {
 		return nil
 	}
 
-	src, err := io.ReadAll(v.src)
+	src, err := io.ReadAll(w.src)
 	if err != nil {
 		return err
 	}
 
-	if closer, ok := v.src.(io.Closer); ok {
+	if closer, ok := w.src.(io.Closer); ok {
 		err := closer.Close()
 		if err != nil {
 			return err
 		}
 	}
 
-	return v.unmarshal(src, v.conf)
+	err = w.unmarshal(src, w.conf)
+
+	if err != nil {
+		filePath := errors.New(w.filepath)
+		return errors.Join(filePath, err)
+	}
+
+	return nil
 }

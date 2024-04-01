@@ -10,7 +10,7 @@ import (
 	"github.com/omeid/uconfig/plugins/file"
 )
 
-// Files represents a set of file paths and the appropriate unmarshaller function.
+// UnmarshalOptions represents a set of file paths and the appropriate unmarshaller function.
 type UnmarshalOptions = file.UnmarshalOptions
 
 // Load creates a uconfig manager with defaults,environment variables,
