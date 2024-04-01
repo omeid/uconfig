@@ -3,7 +3,7 @@
 
 Lightweight, zero-dependency, and extendable configuration management.
 
-uConfig is extremely light and extendable configuration management library with zero dependencies. Every aspect of configuration is provided through a _plugin_, which means you can have any combination of flags, environment variables, defaults, secret providers, Kubernetes Downward API, and what you want, and only what you want, through plugins.
+uConfig is extremely light and extendable configuration management library with zero dependencies. Every aspect of configuration is provided through a _plugin_, which means you can have any combination of flags, environment variables, defaults, secret providers, Kubernetes Downward API, and any combination of configuration files and formats including json, toml, cue, or just about anything you want, and only what you want, through plugins.
 
 
 uConfig takes the config schema as a struct decorated with tags, nesting is supported.

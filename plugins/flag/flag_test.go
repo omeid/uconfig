@@ -106,8 +106,8 @@ type fCli struct {
 func TestFlagTagCommand(t *testing.T) {
 
 	args := []string{
-		"run",
 		"-host=https://blah.bleh",
+		"run",
 	}
 
 	expect := fCli{
@@ -145,8 +145,8 @@ type fCliRename struct {
 func TestFlagTagCommandRename(t *testing.T) {
 
 	args := []string{
-		"disco",
 		"-command=dance",
+		"disco",
 	}
 
 	expect := fCliRename{

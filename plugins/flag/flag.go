@@ -108,17 +108,19 @@ func (v *visitor) Visit(fields flat.Fields) error {
 }
 
 func extraCommand(args []string) (string, []string, bool) {
-	if len(args) == 0 {
+	lastIndex := len(args) - 1
+
+	if lastIndex < 0 {
 		return "", args, false
 	}
 
-	command := args[0]
+	command := args[lastIndex]
 
 	if command != "" && command[0] == '-' {
 		return "", args, false
 	}
 
-	return command, args[1:], command != ""
+	return command, args[:lastIndex], command != ""
 }
 
 func (v *visitor) Parse() error {
