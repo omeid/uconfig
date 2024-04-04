@@ -127,7 +127,7 @@ func (v *visitor) Visit(fields flat.Fields) error {
 	return nil
 }
 
-func extraCommand(args []string, fields flat.Fields) (string, []string, bool) {
+func extractCommand(args []string, fields flat.Fields) (string, []string, bool) {
 	lastIndex := len(args) - 1
 
 	if lastIndex < 0 {
@@ -145,18 +145,22 @@ func extraCommand(args []string, fields flat.Fields) (string, []string, bool) {
 		return command, args[:lastIndex], command != ""
 	}
 
-	if parg := args[lastIndex-1]; parg != "" && parg[0] == '-' && !strings.Contains(parg, "=") {
+	prevArg := args[lastIndex-1]
 
-		// so a flag
+	// if the previous arg is a flag without value (has =).
+	if prevArg != "" && prevArg[0] == '-' && !strings.Contains(prevArg, "=") {
+
 		var prevArgIsBool bool
 
 		for _, field := range fields {
-			if field.Meta()[tag] == parg {
+			if field.Meta()[tag] == prevArg {
 				_, prevArgIsBool = field.Interface().(bool)
 				break
 			}
 		}
 
+		// if the previous arg is a flag and it isn't boolean
+		// then what we have is semantically the value for it, not the command.
 		if !prevArgIsBool {
 			return "", args, false
 		}
@@ -172,18 +176,22 @@ func (v *visitor) Parse() error {
 	if v.command != nil {
 		var command string
 
-		var set bool
-		command, args, set = extraCommand(args, v.fields)
+		var found bool
+		command, args, found = extractCommand(args, v.fields)
 
-		if set {
+		if found {
 			err := v.command.Set(command)
 			if err != nil {
 				return err
 			}
-			// we have visissted the command.
+			// we have visited the command field.
 			v.requiredSet[commandFieldName] = true
 		}
 
+	}
+
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		return fmt.Errorf("Bad argument at the start: (%s)", args[0])
 	}
 
 	err := v.fs.Parse(args)
@@ -194,6 +202,12 @@ func (v *visitor) Parse() error {
 
 	if err != nil {
 		return err
+	}
+
+	extraneous := v.fs.Args()
+
+	if len(extraneous) != 0 {
+		return fmt.Errorf("Extra arguments provided: (%s)", strings.Join(extraneous, ","))
 	}
 
 	v.fs.Visit(func(f *flag.Flag) {

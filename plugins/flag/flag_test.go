@@ -424,3 +424,31 @@ func TestFlagRequiredOkay(t *testing.T) {
 	}
 
 }
+
+func TestFlagExtraArgs(t *testing.T) {
+
+	args := []string{"-mode=happy", "run", "fun"}
+
+	value := fCliRequired{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf, err := uconfig.New(&value, fs)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conf.Parse()
+
+	if err == nil {
+		t.Fatal("Expected error for extra arguments but got nil")
+	}
+
+	expect := "Extra arguments provided: (run)"
+
+	if err.Error() != expect {
+		t.Errorf("expected (%s) but got (%s)", expect, err)
+	}
+
+}
