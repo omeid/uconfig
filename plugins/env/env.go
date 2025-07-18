@@ -25,13 +25,12 @@ type visitor struct {
 }
 
 func makeEnvName(name string) string {
-	name = strings.Replace(name, ".", "_", -1)
+	name = strings.ReplaceAll(name, ".", "_")
 	name = strings.ToUpper(name)
 	return name
 }
 
 func (v *visitor) Visit(f flat.Fields) error {
-
 	v.fields = f
 
 	for _, f := range v.fields {
@@ -47,7 +46,6 @@ func (v *visitor) Visit(f flat.Fields) error {
 }
 
 func (v *visitor) Parse() error {
-
 	for _, f := range v.fields {
 
 		name := f.Meta()[tag]

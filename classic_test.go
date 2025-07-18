@@ -21,8 +21,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestClassicBasic(t *testing.T) {
-
-	expect := f.Config{
+	expect := &f.Config{
 		Command: "run",
 
 		Anon: f.Anon{
@@ -49,15 +48,20 @@ func TestClassicBasic(t *testing.T) {
 		{"testdata/classic.json", json.Unmarshal, true},
 	}
 
-	value := f.Config{}
-
 	// set some env vars to test env var and plugin orders.
-	os.Setenv("VERSION", "bad-value-overrided-with-flags")
-	os.Setenv("REDIS_ADDRESS", "from-envs")
+	err := os.Setenv("VERSION", "bad-value-overrided-with-flags")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv("REDIS_ADDRESS", "from-envs")
+	if err != nil {
+		t.Fatal(err)
+	}
 	// patch the os.Args. for our tests.
 	os.Args = append(os.Args[:1], "-version=from-flags")
 
-	_, err := uconfig.Classic(&value, files)
+	conf := uconfig.Classic[f.Config](files)
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,12 +69,10 @@ func TestClassicBasic(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }
 
 func TestClassicWithSecret(t *testing.T) {
-
-	//Config is part of text fixtures.
+	// Config is part of text fixtures.
 	type Creds struct {
 		APIKey   string `secret:""`
 		APIToken string `secret:"API_TOKEN"`
@@ -81,7 +83,7 @@ func TestClassicWithSecret(t *testing.T) {
 		Rethink f.RethinkConfig
 		Creds   Creds
 	}
-	expect := Config{
+	expect := &Config{
 		Redis: f.Redis{
 			Host: "redis-host",
 			Port: 6379,
@@ -106,10 +108,7 @@ func TestClassicWithSecret(t *testing.T) {
 		{"testdata/classic.json", json.Unmarshal, true},
 	}
 
-	value := Config{}
-
 	SecretProvider := func(name string) (string, error) {
-
 		// known secrets.
 		if name == "API_TOKEN" || name == "RETHINK_PASSWORD" || name == "CREDS_APIKEY" {
 			return "top secret token", nil
@@ -120,9 +119,14 @@ func TestClassicWithSecret(t *testing.T) {
 
 	// patch the os.Args. for our tests.
 	os.Args = os.Args[:1]
-	os.Unsetenv("REDIS_ADDRESS")
+	err := os.Unsetenv("REDIS_ADDRESS")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	_, err := uconfig.Classic(&value, files, secret.New(SecretProvider))
+	conf := uconfig.Classic[Config](files, secret.New(SecretProvider))
+
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,42 +134,39 @@ func TestClassicWithSecret(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }
 
 func TestClassicBadPlugin(t *testing.T) {
-
 	var badPlugin BadPlugin
 
-	config := f.Config{}
-
-	_, err := uconfig.Classic(&config, nil, badPlugin)
+	conf := uconfig.Classic[f.Config](nil, badPlugin)
+	_, err := conf.Parse()
 
 	if err == nil {
 		t.Error("expected error for bad plugin, got nil")
 	}
 
-	if err.Error() != "Unsupported plugins. Expecting a Walker or Visitor" {
-		t.Errorf("Expected unsupported plugin error, got: %v", err)
+	if err.Error() != "unsupported plugins. expecting a walker or visitor" {
+		t.Errorf("expected unsupported plugin error, got: %v", err)
 	}
-
 }
 
 func TestClassicCommand(t *testing.T) {
-
-	expect := f.Config{
+	expect := &f.Config{
 		Command: "run",
 		Rethink: f.RethinkConfig{
 			Db: "primary",
 		},
 	}
 
-	value := f.Config{}
-
 	// set some env vars to test env var and plugin orders.
-	os.Unsetenv("VERSION")
+	err := os.Unsetenv("VERSION")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	_, err := uconfig.Classic(&value, nil)
+	conf := uconfig.Classic[f.Config](nil)
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,5 +174,4 @@ func TestClassicCommand(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }

@@ -11,10 +11,8 @@ import (
 )
 
 func TestFlattenNested(t *testing.T) {
-
 	conf := f.Config{}
 	fs, err := flat.View(&conf)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +127,6 @@ func TestFlattenTypes(t *testing.T) {
 	_ = values
 
 	fs, err := flat.View(&value)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +141,6 @@ func TestFlattenTypes(t *testing.T) {
 
 		fmt.Printf("Mapping field %s: %s\n", name, value)
 		err := field.Set(value)
-
 		if err != nil {
 			t.Fatalf("Field: %v, Error: %v", name, err)
 		}
@@ -153,5 +149,4 @@ func TestFlattenTypes(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }

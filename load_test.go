@@ -14,8 +14,7 @@ import (
 )
 
 func TestLoadBasic(t *testing.T) {
-
-	expect := f.Config{
+	expect := &f.Config{
 		Command: "run",
 		Anon: f.Anon{
 			Version: "version-from-env",
@@ -41,14 +40,20 @@ func TestLoadBasic(t *testing.T) {
 		{"testdata/classic.json", json.Unmarshal, true},
 	}
 
-	value := f.Config{}
-
 	// set some env vars to test env var and plugin orders.
-	os.Setenv("VERSION", "version-from-env")
-	os.Setenv("REDIS_ADDRESS", "from-envs")
+	err := os.Setenv("VERSION", "version-from-env")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv("REDIS_ADDRESS", "from-envs")
+	if err != nil {
+		t.Fatal(err)
+	}
 	// patch the os.Args. for our tests.
 
-	_, err := uconfig.Load(&value, files)
+	conf := uconfig.Load[f.Config](files)
+
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,12 +61,10 @@ func TestLoadBasic(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }
 
 func TestLoadWithSecret(t *testing.T) {
-
-	//Config is part of text fixtures.
+	// Config is part of text fixtures.
 	type Creds struct {
 		APIKey   string `secret:""`
 		APIToken string `secret:"API_TOKEN"`
@@ -72,7 +75,7 @@ func TestLoadWithSecret(t *testing.T) {
 		Rethink f.RethinkConfig
 		Creds   Creds
 	}
-	expect := Config{
+	expect := &Config{
 		Redis: f.Redis{
 			Host: "redis-host",
 			Port: 6379,
@@ -97,10 +100,7 @@ func TestLoadWithSecret(t *testing.T) {
 		{"testdata/classic.json", json.Unmarshal, true},
 	}
 
-	value := Config{}
-
 	SecretProvider := func(name string) (string, error) {
-
 		// known secrets.
 		if name == "API_TOKEN" || name == "RETHINK_PASSWORD" || name == "CREDS_APIKEY" {
 			return "top secret token", nil
@@ -109,10 +109,21 @@ func TestLoadWithSecret(t *testing.T) {
 		return "", fmt.Errorf("Secret not found %s", name)
 	}
 
-	os.Unsetenv("VERSION")
-	os.Unsetenv("REDIS_ADDRESS")
+	err := os.Unsetenv("VERSION")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Unsetenv("REDIS_ADDRESS")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	_, err := uconfig.Load(&value, files, secret.New(SecretProvider))
+	conf := uconfig.Load[Config](files, secret.New(SecretProvider))
+
+	value, err := conf.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,12 +131,10 @@ func TestLoadWithSecret(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }
 
 func TestLoadWithMultiFile(t *testing.T) {
-
-	expect := f.Config{
+	expect := &f.Config{
 		Command: "run",
 		Anon: f.Anon{
 			Version: "version-from-env",
@@ -148,17 +157,22 @@ func TestLoadWithMultiFile(t *testing.T) {
 		".json": json.Unmarshal,
 	}
 
-	value := f.Config{}
-
 	// set some env vars to test env var and plugin orders.
-	os.Setenv("VERSION", "version-from-env")
-	os.Setenv("REDIS_ADDRESS", "from-envs")
-	// patch the os.Args. for our tests.
+	err := os.Setenv("VERSION", "version-from-env")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv("REDIS_ADDRESS", "from-envs")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	_, err := uconfig.Load(&value,
+	conf := uconfig.Load[f.Config](
 		nil,
 		file.NewMulti("plugins/file/testdata/config_rethink.json", options, true),
 	)
+
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,22 +180,19 @@ func TestLoadWithMultiFile(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }
-func TestLoadBadPlugin(t *testing.T) {
 
+func TestLoadBadPlugin(t *testing.T) {
 	var badPlugin BadPlugin
 
-	config := f.Config{}
-
-	_, err := uconfig.Load(&config, nil, badPlugin)
+	conf := uconfig.Load[f.Config](nil, badPlugin)
+	_, err := conf.Parse()
 
 	if err == nil {
 		t.Error("expected error for bad plugin, got nil")
 	}
 
-	if err.Error() != "Unsupported plugins. Expecting a Walker or Visitor" {
+	if err.Error() != "unsupported plugins. expecting a walker or visitor" {
 		t.Errorf("Expected unsupported plugin error, got: %v", err)
 	}
-
 }

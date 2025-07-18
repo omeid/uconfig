@@ -55,11 +55,10 @@ func TestUsage(t *testing.T) {
 	// one tag/field that isn't pre-weighted in "usage".
 	noopPlugin := &UselessPluginVisitor{}
 
-	value := f.Config{}
-
 	secretProvider := func(name string) (string, error) { return "top secret token", nil }
 
-	c, err := uconfig.Classic(&value, nil, secret.New(secretProvider), noopPlugin)
+	conf := uconfig.Classic[f.Config](nil, secret.New(secretProvider), noopPlugin)
+	_, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +71,7 @@ func TestUsage(t *testing.T) {
 		)
 	}
 
-	c.Usage()
+	conf.Usage()
 
 	output := stdout.String()
 

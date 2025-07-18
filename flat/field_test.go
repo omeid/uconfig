@@ -8,7 +8,6 @@ import (
 )
 
 func TestField(t *testing.T) {
-
 	type Config struct {
 		First  string `test:"test-tag"`
 		Second error
@@ -16,7 +15,6 @@ func TestField(t *testing.T) {
 
 	conf := &Config{First: "first"}
 	fs, err := flat.View(conf)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,5 +54,4 @@ func TestField(t *testing.T) {
 	if def := firstField.Interface(); def != "first via pointer" {
 		t.Errorf("expected String() to return value set via pointer but got %v", def)
 	}
-
 }

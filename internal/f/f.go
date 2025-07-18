@@ -74,12 +74,16 @@ func (l *ReadableDirection) UnmarshalText(value []byte) error {
 	return nil
 }
 
-type ElemUnmarshalerSlice []ReadableDirection
-type ElemPtrUnmarshalerSlice []*ReadableDirection
+type (
+	ElemUnmarshalerSlice    []ReadableDirection
+	ElemPtrUnmarshalerSlice []*ReadableDirection
+)
 
 // ensure the interfae is implemented properly.
-var _ encoding.TextUnmarshaler = &TextUnmarshalerStringSlice{}
-var _ encoding.TextUnmarshaler = NewReadableDirection(0)
+var (
+	_ encoding.TextUnmarshaler = &TextUnmarshalerStringSlice{}
+	_ encoding.TextUnmarshaler = NewReadableDirection(0)
+)
 
 // Types is part of text fixtures.
 type Types struct {

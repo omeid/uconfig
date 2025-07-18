@@ -17,23 +17,16 @@ type fDefaults struct {
 }
 
 func TestDefaultTag(t *testing.T) {
-
-	expect := fDefaults{
+	expect := &fDefaults{
 		Address: "https://blah.bleh",
 		Bases:   []string{"list", "blah"},
 		Timeout: 5 * time.Second,
-		Ignored: "not-empty",
+		Ignored: "",
 	}
 
-	value := fDefaults{Ignored: "not-empty"}
+	conf := uconfig.New[fDefaults](defaults.New())
 
-	conf, err := uconfig.New(&value, defaults.New())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.Parse()
-
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,5 +34,4 @@ func TestDefaultTag(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }

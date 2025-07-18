@@ -36,7 +36,7 @@ func (f Files) Plugins() []plugins.Plugin {
 
 // Unmarshal is any function that maps the source bytes to the provided
 // config.
-type Unmarshal func(src []byte, v interface{}) error
+type Unmarshal func(src []byte, v any) error
 
 // NewReader returns a uconfig plugin that unmarshals the content of
 // the provided io.Reader into the config using the provided unmarshal
@@ -47,7 +47,6 @@ func NewReader(src io.Reader, filepath string, unmarshal Unmarshal) plugins.Plug
 		filepath:  filepath,
 		unmarshal: unmarshal,
 	}
-
 }
 
 // Config describes the options required for a file.
@@ -58,7 +57,6 @@ type Config struct {
 
 // New returns an EnvSet.
 func New(path string, unmarshal Unmarshal, config Config) plugins.Plugin {
-
 	plug := &walker{
 		filepath:  path,
 		unmarshal: unmarshal,
@@ -82,13 +80,13 @@ func New(path string, unmarshal Unmarshal, config Config) plugins.Plugin {
 type walker struct {
 	filepath  string
 	src       io.Reader
-	conf      interface{}
+	conf      any
 	unmarshal Unmarshal
 
 	err error
 }
 
-func (w *walker) Walk(conf interface{}) error {
+func (w *walker) Walk(conf any) error {
 	if w.err != nil {
 		return w.err
 	}
@@ -97,10 +95,9 @@ func (w *walker) Walk(conf interface{}) error {
 	return w.err
 }
 
-var ErrEncodingFailed = errors.New("failed to decoder file")
+var ErrEncodingFailed = errors.New("failed to decode file")
 
 func (w *walker) Parse() error {
-
 	if w.err != nil {
 		return w.err
 	}
@@ -122,7 +119,6 @@ func (w *walker) Parse() error {
 	}
 
 	err = w.unmarshal(src, w.conf)
-
 	if err != nil {
 		filePath := errors.New(w.filepath)
 		return errors.Join(filePath, err)

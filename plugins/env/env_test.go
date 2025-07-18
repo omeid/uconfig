@@ -11,7 +11,6 @@ import (
 )
 
 func TestEnvBasic(t *testing.T) {
-
 	envs := map[string]string{
 		"COMMAND":              "start",
 		"GOHARD":               "T",
@@ -23,7 +22,7 @@ func TestEnvBasic(t *testing.T) {
 		"RETHINK_DB":           "",
 	}
 
-	expect := f.Config{
+	expect := &f.Config{
 		Command: "start",
 		Anon: f.Anon{
 			Version: "0.2",
@@ -46,18 +45,15 @@ func TestEnvBasic(t *testing.T) {
 	}
 
 	for key, value := range envs {
-		os.Setenv(key, value)
+		err := os.Setenv(key, value)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	value := f.Config{Rethink: f.RethinkConfig{Db: "must-be-override-by-empty-env"}}
+	conf := uconfig.New[f.Config](env.New())
 
-	conf, err := uconfig.New(&value, env.New())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.Parse()
-
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +61,6 @@ func TestEnvBasic(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }
 
 type fEnv struct {
@@ -73,28 +68,24 @@ type fEnv struct {
 }
 
 func TestEnvTag(t *testing.T) {
-
 	envs := map[string]string{
 		"MY_HOST_NAME": "https://blah.bleh",
 	}
 
 	for key, value := range envs {
-		os.Setenv(key, value)
+		err := os.Setenv(key, value)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	expect := fEnv{
+	expect := &fEnv{
 		Address: "https://blah.bleh",
 	}
 
-	value := fEnv{}
+	conf := uconfig.New[fEnv](env.New())
 
-	conf, err := uconfig.New(&value, env.New())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.Parse()
-
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,5 +93,4 @@ func TestEnvTag(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }

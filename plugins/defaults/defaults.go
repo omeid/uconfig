@@ -22,7 +22,6 @@ type visitor struct {
 }
 
 func (v *visitor) Visit(f flat.Fields) error {
-
 	v.fields = f
 
 	for _, f := range v.fields {
@@ -36,7 +35,6 @@ func (v *visitor) Visit(f flat.Fields) error {
 }
 
 func (v *visitor) Parse() error {
-
 	for _, f := range v.fields {
 		value, ok := f.Meta()[tag]
 		if !ok {

@@ -9,10 +9,8 @@ import (
 	"golang.org/x/text/language"
 )
 
-var (
-	// ErrUnexpectedType is returned when flatten sees an unsupported type.
-	ErrUnexpectedType = errors.New("Unexpected type, expecting a pointer to struct")
-)
+// ErrUnexpectedType is returned when flatten sees an unsupported type.
+var ErrUnexpectedType = errors.New("unexpected type, expecting a pointer to struct")
 
 // Fields is a slice of Field.
 type Fields []Field
@@ -28,12 +26,12 @@ type Field interface {
 
 	Meta() map[string]string
 
-	Interface() interface{}
+	Interface() any
 	Set(string) error
 
 	// returns the Ptr to this value.
 	// It is used by complex decoders like uconfig-cue.
-	Ptr() interface{}
+	Ptr() any
 }
 
 var caser = cases.Title(language.Und, cases.NoLower)
@@ -41,10 +39,8 @@ var caser = cases.Title(language.Und, cases.NoLower)
 // View provides a flat view of the provided structs an array of fields.
 // sub-struct fields are prefixed with the struct key (not type) followed by a dot,
 // this is repeated for each nested level.
-func View(s interface{}) (Fields, error) {
-
+func View(s any) (Fields, error) {
 	rs, err := unwrap(s)
-
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +49,6 @@ func View(s interface{}) (Fields, error) {
 }
 
 func walkStruct(prefix string, rs reflect.Value) ([]Field, error) {
-
 	prefix = caser.String(prefix)
 
 	fields := []Field{}
@@ -103,7 +98,7 @@ func walkStruct(prefix string, rs reflect.Value) ([]Field, error) {
 	return fields, nil
 }
 
-func unwrap(s interface{}) (reflect.Value, error) {
+func unwrap(s any) (reflect.Value, error) {
 	rs := reflect.ValueOf(s)
 
 	if k := rs.Kind(); k != reflect.Ptr {

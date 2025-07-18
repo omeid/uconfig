@@ -15,8 +15,10 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-const tag = "flag"
-const commandFieldName = "[command]"
+const (
+	tag              = "flag"
+	commandFieldName = "[command]"
+)
 
 func init() {
 	plugins.RegisterTag(tag)
@@ -34,7 +36,6 @@ const (
 
 // New returns a new Flags
 func New(name string, errorHandling ErrorHandling, args []string) plugins.Plugin {
-
 	fs := flag.NewFlagSet(name, flag.ErrorHandling(errorHandling))
 	fs.Usage = func() {}
 
@@ -63,7 +64,7 @@ type visitor struct {
 }
 
 func makeFlagName(name string) string {
-	name = strings.Replace(name, ".", "-", -1)
+	name = strings.ReplaceAll(name, ".", "-")
 	name = strings.ToLower(name)
 	return name
 }
@@ -76,7 +77,7 @@ func (ff *fieldFlag) String() string {
 	if ff == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s", ff.Field.Interface())
+	return fmt.Sprintf("%s", ff.Interface())
 }
 
 // Used by standard library flag package.
@@ -85,7 +86,6 @@ func (f *fieldFlag) IsBoolFlag() bool {
 }
 
 func (v *visitor) Visit(fields flat.Fields) error {
-
 	v.fields = fields
 
 	for _, f := range v.fields {
@@ -170,7 +170,6 @@ func extractCommand(args []string, fields flat.Fields) (string, []string, bool) 
 }
 
 func (v *visitor) Parse() error {
-
 	args := v.args
 
 	if v.command != nil {
@@ -191,7 +190,7 @@ func (v *visitor) Parse() error {
 	}
 
 	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
-		return fmt.Errorf("Bad argument at the start: (%s)", args[0])
+		return fmt.Errorf("bad argument at the start: (%s)", args[0])
 	}
 
 	err := v.fs.Parse(args)
@@ -207,7 +206,7 @@ func (v *visitor) Parse() error {
 	extraneous := v.fs.Args()
 
 	if len(extraneous) != 0 {
-		return fmt.Errorf("Extra arguments provided: (%s)", strings.Join(extraneous, ","))
+		return fmt.Errorf("extra arguments provided: (%s)", strings.Join(extraneous, ","))
 	}
 
 	v.fs.Visit(func(f *flag.Flag) {
@@ -220,7 +219,7 @@ func (v *visitor) Parse() error {
 
 	for _, field := range fields {
 		if !v.requiredSet[field] {
-			err = errors.Join(err, errors.New("Missing required flag: "+field))
+			err = errors.Join(err, errors.New("missing required flag: "+field))
 		}
 	}
 

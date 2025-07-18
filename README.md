@@ -50,35 +50,24 @@ import (
 
 // Config is our application config.
 type Config struct {
-
   // yes you can have slices.
   Hosts    []string `default:"localhost,localhost.local" usage:"the ip or domains to bind to"`
-
   Redis    redis.Config
   Database database.Config
-
 }
 
-
+var config = uconfig.Classic[Config](
+    uconfig.Files{
+        {"config.json", json.Unmarshal, true},
+        // you can of course add as many files
+        // as you want, and they will be applied
+        // in the given order.
+    }
+)
 
 func main() {
 
-	conf := &Config{}
-
-	files := uconfig.Files{
-		{"config.json", json.Unmarshal, true},
-		// you can of course add as many files
-		// as you want, and they will be applied
-		// in the given order.
-	}
-
-	_, err := uconfig.Classic(&conf, files)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
+	conf := config.Run()
 	// use conf as you please.
 	// let's pretty print it as JSON for example:
 	configAsJson, err := json.MarshalIndent(conf, "", " ")

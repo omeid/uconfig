@@ -1,9 +1,6 @@
 package uconfig
 
 import (
-	"errors"
-	"os"
-
 	"github.com/omeid/uconfig/plugins"
 	"github.com/omeid/uconfig/plugins/defaults"
 	"github.com/omeid/uconfig/plugins/env"
@@ -17,32 +14,21 @@ type Files = file.Files
 // Classic creates a uconfig manager with defaults,environment variables,
 // and flags (in that order) and optionally file loaders based on the provided
 // Files map and parses them right away.
-func Classic(conf interface{}, files Files, userPlugins ...plugins.Plugin) (Config, error) {
-
-	fps := files.Plugins()
-
-	ps := make([]plugins.Plugin, 0, len(fps)+3+len(userPlugins))
-
+func Classic[C any](files Files, userPlugins ...plugins.Plugin) Config[C] {
+	// almost a duplicate of Load, but due to the order of things, not worth abstracting for a few lines.
+	ps := make([]plugins.Plugin, 0, len(files)+3+len(userPlugins))
 	// first defaults
 	ps = append(ps, defaults.New())
 	// then files
-	ps = append(ps, fps...)
-	// followed by env and flags
-	ps = append(ps, env.New(), flag.Standard())
+	ps = append(ps, files.Plugins()...)
 	// then any user pugins, often just _secret_.
 	ps = append(ps, userPlugins...)
 
-	c, err := New(conf, ps...)
+	// followed by envs
+	ps = append(ps, env.New())
 
-	if err != nil {
-		return c, err
-	}
+	// and lastly flags.
+	ps = append(ps, flag.Standard())
 
-	err = c.Parse()
-	if errors.Is(err, ErrUsage) {
-		c.Usage()
-		os.Exit(0)
-	}
-
-	return c, err
+	return New[C](ps...)
 }

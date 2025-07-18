@@ -11,14 +11,13 @@ import (
 
 type UnmarshalOptions map[string]Unmarshal
 
-var ErrFileExtNotSupported = errors.New("File extension not supported.")
+var ErrFileExtNotSupported = errors.New("file extension not supported")
 
 // NewMutli returns a multi unmarshal plugin that can decode the file from path
 // using various Unmarshal functions provided in unmarshal map.
 // This is usually used as a second stage to load configurations based on a flag
 // or configuration value.
 func NewMulti(path string, unmarshalOptions UnmarshalOptions, optional bool) plugins.Plugin {
-
 	plug := &multiWalker{
 		filepath:         path,
 		unmarshalOptions: unmarshalOptions,
@@ -50,13 +49,13 @@ func NewMulti(path string, unmarshalOptions UnmarshalOptions, optional bool) plu
 type multiWalker struct {
 	filepath         string
 	src              io.Reader
-	conf             interface{}
+	conf             any
 	unmarshalOptions map[string]Unmarshal
 
 	err error
 }
 
-func (v *multiWalker) Walk(conf interface{}) error {
+func (v *multiWalker) Walk(conf any) error {
 	if v.err != nil {
 		return v.err
 	}
@@ -66,7 +65,6 @@ func (v *multiWalker) Walk(conf interface{}) error {
 }
 
 func (v *multiWalker) Parse() error {
-
 	if v.err != nil {
 		return v.err
 	}

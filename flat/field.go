@@ -21,7 +21,6 @@ type field struct {
 }
 
 func (f *field) getName(tag string) (string, bool) {
-
 	name, explicit := f.Tag(tag)
 
 	name, _, _ = strings.Cut(name, ",")
@@ -61,12 +60,11 @@ func (f *field) Tag(key string) (string, bool) {
 	return f.tag.Lookup(key)
 }
 
-func (f *field) Interface() interface{} {
+func (f *field) Interface() any {
 	return f.field.Interface()
 }
 
-func (f *field) Ptr() interface{} {
-
+func (f *field) Ptr() any {
 	kind := f.field.Kind()
 
 	if kind == reflect.Pointer || kind == reflect.Slice || kind == reflect.Interface {
@@ -79,7 +77,6 @@ func (f *field) Ptr() interface{} {
 var textUnmarshalerType = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()
 
 func (f *field) Set(value string) error {
-
 	t := f.field.Type()
 
 	if t.Implements(textUnmarshalerType) {
@@ -121,7 +118,6 @@ func (f *field) Set(value string) error {
 }
 
 func (f *field) setUnmarshale(value []byte) error {
-
 	if f.field.IsNil() {
 		f.field.Set(reflect.New(f.field.Type().Elem()))
 	}
@@ -176,7 +172,6 @@ func (f *field) setFloat(value string) error {
 }
 
 func (f *field) setSlice(value string) error {
-
 	t := f.field.Type()
 	setSliceElem := setSliceElem(t.Elem())
 
@@ -200,7 +195,6 @@ func (f *field) setSlice(value string) error {
 }
 
 func setSliceElem(elem reflect.Type) func(reflect.Value, string) error {
-
 	if elem.Implements(textUnmarshalerType) {
 		return setSliceElemUnmarshale
 	}

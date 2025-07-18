@@ -11,8 +11,7 @@ import (
 )
 
 func TestMultiFile(t *testing.T) {
-
-	expect := f.Config{
+	expect := &f.Config{
 		Command: "",
 		Anon:    f.Anon{},
 
@@ -32,34 +31,25 @@ func TestMultiFile(t *testing.T) {
 		},
 	}
 
-	value := f.Config{}
-
 	unmarshalOptions := file.UnmarshalOptions{
 		".json": json.Unmarshal,
 	}
 
-	conf, err := uconfig.New(&value,
+	conf := uconfig.New[f.Config](
 		file.NewMulti("testdata/config_rethink.json", unmarshalOptions, false),
 	)
 
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.Parse()
-
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }
 
 func TestMultiFileChoice(t *testing.T) {
-
-	expect := f.Config{
+	expect := &f.Config{
 		Command: "",
 		Anon:    f.Anon{},
 
@@ -90,19 +80,11 @@ func TestMultiFileChoice(t *testing.T) {
 	}
 	for _, filepath := range options {
 
-		value := f.Config{}
-
-		conf, err := uconfig.New(
-			&value,
+		conf := uconfig.New[f.Config](
 			file.NewMulti(filepath, unmarshalOptions, false),
 		)
 
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = conf.Parse()
-
+		value, err := conf.Parse()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -110,12 +92,10 @@ func TestMultiFileChoice(t *testing.T) {
 			t.Error(diff)
 		}
 	}
-
 }
 
 func TestMultiOptional(t *testing.T) {
-
-	expect := f.Config{
+	expect := &f.Config{
 		Command: "",
 		Anon:    f.Anon{},
 
@@ -135,28 +115,20 @@ func TestMultiOptional(t *testing.T) {
 		},
 	}
 
-	value := f.Config{}
-
 	unmarshalOptions := file.UnmarshalOptions{
 		".json": json.Unmarshal,
 	}
 
-	conf, err := uconfig.New(&value,
+	conf := uconfig.New[f.Config](
 		file.NewMulti("testdata/doesnt_exists.json", unmarshalOptions, true),
 		file.NewMulti("testdata/config_rethink.json", unmarshalOptions, false),
 	)
 
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.Parse()
-
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }

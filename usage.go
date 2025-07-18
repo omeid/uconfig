@@ -23,14 +23,13 @@ var UsageOutput io.Writer = os.Stdout
 
 // Usage prints out the current config fields, flags, env vars
 // and any other source and setting.
-func (c *config) Usage() {
-
+func (c *config[C]) Usage() {
 	setUsageMeta(c.fields)
 	headers := getHeaders(c.fields)
 
 	w := tabwriter.NewWriter(UsageOutput, 0, 0, 4, ' ', 0)
-	fmt.Fprintf(w, "\nSupported Fields:\n")
-	fmt.Fprintln(w, strings.ToUpper(strings.Join(headers, "\t")))
+	_, _ = fmt.Fprintf(w, "\nSupported Fields:\n")
+	_, _ = fmt.Fprintln(w, strings.ToUpper(strings.Join(headers, "\t")))
 
 	dashes := make([]string, len(headers))
 	for i, f := range headers {
@@ -40,7 +39,7 @@ func (c *config) Usage() {
 		}
 		dashes[i] = strings.Repeat("-", n)
 	}
-	fmt.Fprintln(w, strings.Join(dashes, "\t"))
+	_, _ = fmt.Fprintln(w, strings.Join(dashes, "\t"))
 
 	for _, f := range c.fields {
 
@@ -52,11 +51,10 @@ func (c *config) Usage() {
 			values[i+1] = value
 		}
 
-		fmt.Fprintln(w, strings.Join(values, "\t"))
+		_, _ = fmt.Fprintln(w, strings.Join(values, "\t"))
 	}
 
 	err := w.Flush()
-
 	if err != nil {
 		// we are asked for usage which means it is interactive use
 		// and so panicing is acceptable.
@@ -65,7 +63,6 @@ func (c *config) Usage() {
 }
 
 func setUsageMeta(fs flat.Fields) {
-
 	for _, f := range fs {
 		usage, ok := f.Tag(usageTag)
 		if !ok {
@@ -111,7 +108,6 @@ func getHeaders(fs flat.Fields) []string {
 	}
 
 	sort.SliceStable(tags, func(i, j int) bool {
-
 		iw := weight(tags, i)
 		jw := weight(tags, j)
 

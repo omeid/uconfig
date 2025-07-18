@@ -28,14 +28,13 @@ type secret struct {
 }
 
 func makeSecretName(name string) string {
-	name = strings.Replace(name, ".", "_", -1)
+	name = strings.ReplaceAll(name, ".", "_")
 	name = strings.ToUpper(name)
 
 	return name
 }
 
 func (v *secret) Visit(f flat.Fields) error {
-
 	v.fields = f
 
 	for _, f := range v.fields {
@@ -57,7 +56,6 @@ func (v *secret) Visit(f flat.Fields) error {
 }
 
 func (v *secret) Parse() error {
-
 	for _, f := range v.fields {
 		name := f.Meta()[tag]
 		if name == "" || name == "-" {
@@ -65,7 +63,6 @@ func (v *secret) Parse() error {
 		}
 
 		value, err := v.source(name)
-
 		if err != nil {
 			return err
 		}
