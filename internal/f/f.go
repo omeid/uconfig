@@ -27,12 +27,13 @@ type RethinkConfig struct {
 
 // Redis is part of text fixtures.
 type Redis struct {
-	Host string
+	Host string `uconfig:".Address"`
 	Port int
 }
 
 // Config is part of text fixtures.
 type Config struct {
+	Command string `flag:",command" default:"run"` // expose this as the cli command.
 	Anon
 	GoHard  bool
 	Redis   Redis
@@ -48,10 +49,43 @@ func (l *TextUnmarshalerStringSlice) UnmarshalText(value []byte) error {
 	return nil
 }
 
-// ensure the interfae is implemented properly.
-var _ encoding.TextUnmarshaler = &TextUnmarshalerStringSlice{}
+type ReadableDirection int
 
-//Types is part of text fixtures.
+func NewReadableDirection(value int) *ReadableDirection {
+	dir := ReadableDirection(value)
+	return &dir
+}
+
+// UnmarshalText is part of encoding.TextUnmarshaler
+func (l *ReadableDirection) UnmarshalText(value []byte) error {
+	switch string(value) {
+	case "north":
+		*l = ReadableDirection(0)
+	case "east":
+		*l = ReadableDirection(90)
+	case "south":
+		*l = ReadableDirection(180)
+	case "west":
+		*l = ReadableDirection(270)
+	default:
+		*l = ReadableDirection(0)
+	}
+
+	return nil
+}
+
+type (
+	ElemUnmarshalerSlice    []ReadableDirection
+	ElemPtrUnmarshalerSlice []*ReadableDirection
+)
+
+// ensure the interfae is implemented properly.
+var (
+	_ encoding.TextUnmarshaler = &TextUnmarshalerStringSlice{}
+	_ encoding.TextUnmarshaler = NewReadableDirection(0)
+)
+
+// Types is part of text fixtures.
 type Types struct {
 	String   string
 	Bool     bool
@@ -78,5 +112,7 @@ type Types struct {
 	SliceFloat32  []float32
 	SliceDuration []time.Duration
 
-	SliceTextUnmarshaler *TextUnmarshalerStringSlice
+	SliceTextUnmarshaler    *TextUnmarshalerStringSlice
+	SliceElemUnmarshaler    ElemUnmarshalerSlice
+	SliceElemPtrUnmarshaler ElemPtrUnmarshalerSlice
 }

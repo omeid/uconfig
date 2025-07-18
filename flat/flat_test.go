@@ -1,6 +1,7 @@
 package flat_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -10,18 +11,17 @@ import (
 )
 
 func TestFlattenNested(t *testing.T) {
-
 	conf := f.Config{}
 	fs, err := flat.View(&conf)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	fields := map[string]bool{
+		"Command":              false,
 		"GoHard":               false,
 		"Version":              false,
-		"Redis.Host":           false,
+		"Redis.Address":        false,
 		"Redis.Port":           false,
 		"Rethink.Host.Address": false,
 		"Rethink.Host.Port":    false,
@@ -29,12 +29,13 @@ func TestFlattenNested(t *testing.T) {
 		"Rethink.Password":     false,
 	}
 
-	// for _, fs := range fs {
-	// 	t.Log(" - ", fs.Name())
-	// }
+	for _, fs := range fs {
+		name, explicit := fs.Name("")
+		t.Log(" - ", name, explicit)
+	}
 
 	for _, fs := range fs {
-		name := fs.Name()
+		name, _ := fs.Name("")
 		_, ok := fields[name]
 		if !ok {
 			t.Fatalf("Unexpected Field: %v", name)
@@ -78,7 +79,9 @@ func TestFlattenTypes(t *testing.T) {
 		"SliceFloat32":  "1.2,3.4, 5.6",
 		"SliceDuration": "5s, 1h",
 
-		"SliceTextUnmarshaler": "a.b.c",
+		"SliceTextUnmarshaler":    "a.b.c",
+		"SliceElemUnmarshaler":    "north,east,south,west",
+		"SliceElemPtrUnmarshaler": "north,east,south,west",
 	}
 
 	expect := f.Types{
@@ -109,6 +112,14 @@ func TestFlattenTypes(t *testing.T) {
 		SliceDuration: []time.Duration{5 * time.Second, 1 * time.Hour},
 
 		SliceTextUnmarshaler: &f.TextUnmarshalerStringSlice{"a", "b", "c"},
+		SliceElemUnmarshaler: f.ElemUnmarshalerSlice{0, 90, 180, 270},
+
+		SliceElemPtrUnmarshaler: f.ElemPtrUnmarshalerSlice{
+			f.NewReadableDirection(0),
+			f.NewReadableDirection(90),
+			f.NewReadableDirection(180),
+			f.NewReadableDirection(270),
+		},
 	}
 
 	value := f.Types{}
@@ -116,20 +127,20 @@ func TestFlattenTypes(t *testing.T) {
 	_ = values
 
 	fs, err := flat.View(&value)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, field := range fs {
-		name := field.Name()
+		name, _ := field.Name("")
+
 		value, ok := values[name]
 		if !ok {
 			t.Fatalf("Missing value for %v", name)
 		}
 
+		fmt.Printf("Mapping field %s: %s\n", name, value)
 		err := field.Set(value)
-
 		if err != nil {
 			t.Fatalf("Field: %v, Error: %v", name, err)
 		}
@@ -138,5 +149,4 @@ func TestFlattenTypes(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }

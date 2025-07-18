@@ -3,7 +3,7 @@
 
 Lightweight, zero-dependency, and extendable configuration management.
 
-uConfig is extremely light and extendable configuration management library with zero dependencies. Every aspect of configuration is provided through a _plugin_, which means you can have any combination of flags, environment variables, defaults, secret providers, Kubernetes Downward API, and what you want, and only what you want, through plugins.
+uConfig is extremely light and extendable configuration management library with zero dependencies. Every aspect of configuration is provided through a _plugin_, which means you can have any combination of flags, environment variables, defaults, secret providers, Kubernetes Downward API, and any combination of configuration files and formats including json, toml, cue, or just about anything you want, and only what you want, through plugins.
 
 
 uConfig takes the config schema as a struct decorated with tags, nesting is supported.
@@ -37,48 +37,37 @@ type Config struct {
 ```go
 package main
 
-
-
 import (
-  "encoding/json"
+	"encoding/json"
+	"fmt"
+	"os"
 
-  "github.com/omeid/uconfig"
+	"github.com/omeid/uconfig"
 
-  "$PROJECT/redis"
-  "$PROJECT/database"
+	"github.com/omeid/uconfig/examples/sample/database"
+	"github.com/omeid/uconfig/examples/sample/redis"
 )
 
 // Config is our application config.
 type Config struct {
+	// yes you can have slices.
+	Hosts []string `default:"localhost,localhost.local" usage:"the ip or domains to bind to"`
 
-  // yes you can have slices.
-  Hosts    []string `default:"localhost,localhost.local" usage:"the ip or domains to bind to"`
-
-  Redis    redis.Config
-  Database database.Config
-
+	Redis    redis.Config
+	Database database.Config
 }
 
+var files = uconfig.Files{
+	{"config.json", json.Unmarshal, true},
+	// you can of course add as many files
+	// as you want, and they will be applied
+	// in the given order.
+}
 
+var conf = uconfig.Classic[Config](files)
 
 func main() {
-
-	conf := &Config{}
-
-	files := uconfig.Files{
-		{"config.json", json.Unmarshal, true},
-		// you can of course add as many files
-		// as you want, and they will be applied
-		// in the given order.
-	}
-
-	_, err := uconfig.Classic(&conf, files)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
+	conf := conf.Run()
 	// use conf as you please.
 	// let's pretty print it as JSON for example:
 	configAsJson, err := json.MarshalIndent(conf, "", " ")
@@ -88,7 +77,6 @@ func main() {
 	}
 
 	fmt.Print(string(configAsJson))
-
 }
 ```
 
@@ -140,17 +128,19 @@ Sometimes you might want to use a different env var, or flag name for backwards 
 
 1. uconfig tag
 
-You can change the name of a field as seen by unconfig.
-This option supports the usual nesting prefixing.
-See the port example below.
+You can change the name of a field as seen by `uconfig`.
+
+Please not that this flag only works for walker plugins (flags, env, anything flat) and for Visitor plugins (file, stream, et al) you will need
+to use encoder specific tags like `json:"field_name"` and so on.
+
 
 2. Plugin specific tags
 
-Most plugins support controlling the field name as seen by that specific plugin.
+Most plugins support controlling the field name as seen by that specific plugin. For example `env:"DB_NAME"`.
 
-This option does not support nesting prefixes.
-See the Database field in the example below.
 
+For both type of tags, you can prefix them with `.` to rename the field only at the struct level.
+See the `Service.Port` and DB_NAME examples below.
 
 ```go
 package database
@@ -158,7 +148,7 @@ package database
 // Config holds the database configurations.
 type Database struct {
   Address  string `default:"localhost"`
-  Port     string `default:"28015" uconfig:"Service.Port"`
+  Port     string `default:"28015" uconfig:".Service.Port"`
   Database string `default:"my-project" env:"DB_NAME" flag:"main-db-name"`
 }
 ```
@@ -216,62 +206,56 @@ The secret provider allows you to grab the value of a config from anywhere you w
 Unlike most other plugins, secret requires explicit `secret:""` tag, this is because only specific config values like passwords and api keys come from a secret provider, compared to the rest of the config which can be set in various ways.
 
 ```go
+package main
 
 import (
+	"encoding/json"
+	"fmt"
 
-  "github.com/omeid/uconfig"
-  "github.com/omeid/uconfig/plugins/secret"
+	"github.com/omeid/uconfig"
+	"github.com/omeid/uconfig/examples/secrets/secretsource"
+	"github.com/omeid/uconfig/plugins/secret"
 )
+
 // Creds is an example of a config struct that uses secret values.
 type Creds struct {
-  // by default, secret plugin will generate a name that is identical
-  // to env plugin, SCREAM_SNAKE_CASE, so in this case it will be
-  // APIKEY however, following the standard uConfig nesting rules
-  // in Config struct below, it becomes CREDS_APIKEY.
-  APIKey   string `secret:""`
-  // or you can provide your own name, which will not be impacted
-  // by nesting or the field name.
-  APIToken string `secret:"API_TOKEN"`
+	// by default, secret plugin will generate a name that is identical
+	// to env plugin, SCREAM_SNAKE_CASE, so in this case it will be
+	// APIKEY however, following the standard uConfig nesting rules
+	// in Config struct below, it becomes CREDS_APIKEY.
+	APIKey string `secret:""`
+	// or you can provide your own name, which will not be impacted
+	// by nesting or the field name.
+	APIToken string `secret:"API_TOKEN"`
 }
 
 type Config struct {
-  Redis   Redis
-  Creds   Creds
+	Creds Creds
 }
 
+var files = uconfig.Files{
+	{"config.json", json.Unmarshal, false},
+}
+
+var secrets = secret.New(func(name string) (string, error) {
+	// you're free to grab the secret based on the name from wherever
+	// you please, aws secrets-manager, hashicorp vault, or wherever.
+	value, ok := secretsource.Get(name)
+	if !ok {
+		return "", secret.ErrSecretNotFound
+	}
+
+	return value, nil
+})
 
 func main() {
+	// then you can use the secretPlugin with uConfig like any other plugin.
+	// Lucky, uconfig.Classic allows passing more plugins, which means
+	// you can simply do the following for flags, envs, files, and secrets!
+	conf := uconfig.Classic[Config](files, secrets).Run()
 
-  conf := &Config{}
-
-
-  files := uconfig.Files{
-    {"config.json", json.Unmarshal, false}
-  }
-
-   // secret.New accepts a function that maps a secret name to it's value.
-   secretPlugin := secret.New(func(name string) (string, error) {
-      // you're free to grab the secret based on the name from wherever
-      // you please, aws secrets-manager, hashicorp vault, or wherever.
-      value, ok := secretSource.Get(name)
-
-      if !ok {
-        return "", ErrSecretNotFound
-      }
-
-      return value, nil
-  })
-
-  // then you can use the secretPlugin with uConfig like any other plugin.
-  // Lucky, uconfig.Classic allows passing more plugins, which means
-  // you can simply do the following for flags, envs, files, and secrets!
-  _, err := uconfig.Classic(&conf, files, secretPlugin)
-  if err != nil {
-    t.Fatal(err)
-  }
-
+	fmt.Printf("we got an API Key: %s\n", conf.Creds.APIKey)
 }
-
 ```
 
 
@@ -290,10 +274,8 @@ import (
 
 func TestSomething(t *testing.T) error {
 
-  conf := &YourConfigStruct{}
-
   // It will panic on error
-  uconfig.Must(conf, defaults.New())
+    conf := uconfig.Must[Conf](defaults.New())
 
   // Use your conf as you please.
 }

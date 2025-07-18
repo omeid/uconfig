@@ -2,7 +2,9 @@
 package uconfig
 
 import (
+	"errors"
 	"fmt"
+	"os"
 
 	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/plugins"
@@ -11,12 +13,16 @@ import (
 var ErrUsage = plugins.ErrUsage
 
 // Config is the config manager.
-type Config interface {
+type Config[C any] interface {
 	// Parse will call the parse method of all the added pluginss in the order
 	// that the pluginss were registered, it will return early as soon as any
 	// plugins fails.
 	// You must call this before using the config value.
-	Parse() error
+	Parse() (*C, error)
+
+	// Run calls parse and checks the error to see if usage was request
+	// otherwise prints the error and usage and exists with os.Exit(1)
+	Run() *C
 
 	// Usage provides a simple usage message based on the meta data registered
 	// by the pluginss.
@@ -24,67 +30,74 @@ type Config interface {
 }
 
 // New returns a new Config. The conf must be a pointer to a struct.
-func New(conf interface{}, ps ...plugins.Plugin) (Config, error) {
+func New[C any](ps ...plugins.Plugin) Config[C] {
+	conf := new(C)
 	fields, err := flat.View(conf)
 
-	c := &config{
+	return &config[C]{
+		err:     err,
 		conf:    conf,
 		fields:  fields,
-		plugins: make([]plugins.Plugin, 0, len(ps)),
+		plugins: ps,
 	}
-
-	if err != nil {
-		return c, err
-	}
-
-	for _, plug := range ps {
-
-		err := c.addPlugin(plug)
-		if err != nil {
-			return c, err
-		}
-	}
-
-	return c, nil
 }
 
-type config struct {
+type config[C any] struct {
 	plugins []plugins.Plugin
-	conf    interface{}
+	conf    *C
 	fields  flat.Fields
+
+	err error // lazy error
 }
 
-func (c *config) addPlugin(plug plugins.Plugin) error {
-	switch plug := plug.(type) {
-
-	case plugins.Visitor:
-		err := plug.Visit(c.fields)
-		if err != nil {
-			return err
-		}
-
-	case plugins.Walker:
-		err := plug.Walk(c.conf)
-		if err != nil {
-			return err
-		}
-
-	default:
-		return fmt.Errorf("Unsupported plugins. Expecting a Walker or Visitor")
+func (c *config[C]) Parse() (*C, error) {
+	if c.err != nil {
+		return nil, c.err
 	}
 
-	c.plugins = append(c.plugins, plug)
-	return nil
-}
+	// first setup plugins.
+	for _, plug := range c.plugins {
+		switch plug := plug.(type) {
 
-func (c *config) Parse() error {
+		case plugins.Visitor:
+			err := plug.Visit(c.fields)
+			if err != nil {
+				return nil, err
+			}
+
+		case plugins.Walker:
+			err := plug.Walk(c.conf)
+			if err != nil {
+				return nil, err
+			}
+
+		default:
+			return nil, fmt.Errorf("unsupported plugins. expecting a walker or visitor")
+		}
+	}
+
 	for _, p := range c.plugins {
 
 		err := p.Parse()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return c.conf, nil
+}
+
+func (c *config[C]) Run() *C {
+	conf, err := c.Parse()
+	if err != nil {
+		usageRequest := errors.Is(err, ErrUsage)
+		ret := 0
+		if !usageRequest {
+			fmt.Println(err)
+		}
+		c.Usage()
+		os.Exit(ret)
+	}
+
+	return conf
 }

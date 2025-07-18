@@ -28,5 +28,4 @@ func TestRegisterTagMustNotPanic(t *testing.T) {
 
 	plugins.RegisterTag("uniuq.1")
 	plugins.RegisterTag("uniuq.2")
-
 }

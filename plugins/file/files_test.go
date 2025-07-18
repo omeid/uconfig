@@ -12,8 +12,8 @@ import (
 )
 
 func TestFiles(t *testing.T) {
-
-	expect := f.Config{
+	expect := &f.Config{
+		Command: "run-file",
 		Anon: f.Anon{
 			Version: "0.2",
 		},
@@ -37,12 +37,13 @@ func TestFiles(t *testing.T) {
 	files := file.Files{
 		{"testdata/config_rethink.json", json.Unmarshal, true},
 		{"testdata/config_partial.json", json.Unmarshal, true},
+		{"testdata/.local.json", json.Unmarshal, false},
 	}
 
-	value := f.Config{}
-
 	os.Args = os.Args[:1]
-	_, err := uconfig.Classic(&value, files)
+	conf := uconfig.Classic[f.Config](files)
+
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,5 +51,4 @@ func TestFiles(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }

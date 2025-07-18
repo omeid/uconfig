@@ -11,20 +11,42 @@ import (
 var _ Field = (*field)(nil)
 
 type field struct {
-	name string
+	name   string
+	prefix string
+
 	meta map[string]string
 
 	tag   reflect.StructTag
 	field reflect.Value
 }
 
-// Used by standard library flag package.
-func (f *field) IsBoolFlag() bool {
-	return f.field.Kind() == reflect.Bool
+func (f *field) getName(tag string) (string, bool) {
+	name, explicit := f.Tag(tag)
+
+	name, _, _ = strings.Cut(name, ",")
+
+	if name == "" || name == "." {
+		name = f.name
+		// explicit here means what it is an explicit name or should
+		// be prefixed.
+		explicit = false
+	}
+
+	if name[0] == '.' {
+		name = name[1:]
+	}
+
+	return name, explicit
 }
 
-func (f *field) Name() string {
-	return f.name
+func (f *field) Name(tag string) (string, bool) {
+	name, explicit := f.getName(tag)
+
+	if f.prefix == "" || explicit {
+		return name, explicit
+	}
+
+	return f.prefix + "." + name, explicit
 }
 
 func (f *field) Meta() map[string]string {
@@ -32,21 +54,29 @@ func (f *field) Meta() map[string]string {
 }
 
 func (f *field) Tag(key string) (string, bool) {
+	if key == "" {
+		return "", false
+	}
 	return f.tag.Lookup(key)
 }
 
-func (f *field) String() string {
-	return f.tag.Get("default")
+func (f *field) Interface() any {
+	return f.field.Interface()
 }
 
-func (f *field) IsZero() bool {
-	return f.field.IsValid() && f.field.IsZero()
+func (f *field) Ptr() any {
+	kind := f.field.Kind()
+
+	if kind == reflect.Pointer || kind == reflect.Slice || kind == reflect.Interface {
+		return f.field.Interface()
+	}
+
+	return f.field.Addr().Interface()
 }
 
 var textUnmarshalerType = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()
 
 func (f *field) Set(value string) error {
-
 	t := f.field.Type()
 
 	if t.Implements(textUnmarshalerType) {
@@ -88,7 +118,6 @@ func (f *field) Set(value string) error {
 }
 
 func (f *field) setUnmarshale(value []byte) error {
-
 	if f.field.IsNil() {
 		f.field.Set(reflect.New(f.field.Type().Elem()))
 	}
@@ -143,7 +172,6 @@ func (f *field) setFloat(value string) error {
 }
 
 func (f *field) setSlice(value string) error {
-
 	t := f.field.Type()
 	setSliceElem := setSliceElem(t.Elem())
 
@@ -167,6 +195,13 @@ func (f *field) setSlice(value string) error {
 }
 
 func setSliceElem(elem reflect.Type) func(reflect.Value, string) error {
+	if elem.Implements(textUnmarshalerType) {
+		return setSliceElemUnmarshale
+	}
+
+	if reflect.PointerTo(elem).Implements(textUnmarshalerType) {
+		return setSliceElemPtrUnmarshale
+	}
 
 	switch elem.Kind() {
 
@@ -187,6 +222,34 @@ func setSliceElem(elem reflect.Type) func(reflect.Value, string) error {
 		return setSliceElemFloat
 	}
 
+	return nil
+}
+
+func setSliceElemUnmarshale(f reflect.Value, value string) error {
+	ptr := reflect.New(f.Type().Elem())
+
+	ut := ptr.MethodByName("UnmarshalText")
+	err := ut.Call([]reflect.Value{reflect.ValueOf([]byte(value))})[0]
+
+	if !err.IsNil() {
+		return err.Interface().(error)
+	}
+
+	f.Set(ptr)
+	return nil
+}
+
+func setSliceElemPtrUnmarshale(f reflect.Value, value string) error {
+	ptr := reflect.New(f.Type())
+
+	ut := ptr.MethodByName("UnmarshalText")
+	err := ut.Call([]reflect.Value{reflect.ValueOf([]byte(value))})[0]
+
+	if !err.IsNil() {
+		return err.Interface().(error)
+	}
+
+	f.Set(reflect.Indirect(ptr))
 	return nil
 }
 

@@ -7,7 +7,6 @@ import (
 )
 
 func TestUnmarshalerStringSlice(t *testing.T) {
-
 	expect := TextUnmarshalerStringSlice{"a", "b", "c"}
 	value := TextUnmarshalerStringSlice{}
 
@@ -19,5 +18,4 @@ func TestUnmarshalerStringSlice(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }

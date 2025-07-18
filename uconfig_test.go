@@ -17,18 +17,16 @@ type BadPlugin interface {
 }
 
 func TestBadPlug(t *testing.T) {
-
 	var badPlugin BadPlugin
 
-	config := f.Config{}
-
-	_, err := uconfig.New(&config, badPlugin)
+	conf := uconfig.New[f.Config](badPlugin)
+	_, err := conf.Parse()
 
 	if err == nil {
 		t.Error("expected error for bad plugin, got nil")
 	}
 
-	if err.Error() != "Unsupported plugins. Expecting a Walker or Visitor" {
+	if err.Error() != "unsupported plugins. expecting a walker or visitor" {
 		t.Errorf("Expected unsupported plugin error, got: %v", err)
 	}
 }
@@ -37,17 +35,15 @@ type FailingPluginWalker struct {
 	plugins.Plugin
 }
 
-func (fp FailingPluginWalker) Walk(interface{}) error {
+func (fp FailingPluginWalker) Walk(any) error {
 	return errors.New("failed to walk")
 }
 
 func TestFailingPlugWalker(t *testing.T) {
-
 	var failingPluginWalker FailingPluginWalker
 
-	config := f.Config{}
-
-	_, err := uconfig.New(&config, failingPluginWalker)
+	conf := uconfig.New[f.Config](failingPluginWalker)
+	_, err := conf.Parse()
 
 	if err == nil {
 		t.Error("expected error for bad plugin, got nil")
@@ -67,12 +63,10 @@ func (fp FailingPluginVisitor) Visit(flat.Fields) error {
 }
 
 func TestFailingPlugVisitor(t *testing.T) {
-
 	var failingPluginVisitor FailingPluginVisitor
 
-	config := f.Config{}
-
-	_, err := uconfig.New(&config, failingPluginVisitor)
+	conf := uconfig.New[f.Config](failingPluginVisitor)
+	_, err := conf.Parse()
 
 	if err == nil {
 		t.Error("expected error for bad plugin, got nil")

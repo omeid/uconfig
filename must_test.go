@@ -12,25 +12,22 @@ import (
 )
 
 func TestMust(t *testing.T) {
-
 	defer func() {
 		if r := recover(); r != nil {
 			t.Errorf("Must should not panic, but did: %v", r)
 		}
 	}()
 
-	value := f.Config{}
-	uconfig.Must(&value)
-
+	uconfig.Must[f.Config]()
 }
 
 func TestMustPanic(t *testing.T) {
-
 	defer func() {
 		r := recover()
 
 		if r == nil {
 			t.Error("Was expecting panic but got nil")
+			return
 		}
 
 		expectErr := "read testdata/classic.json: file already closed"
@@ -40,39 +37,20 @@ func TestMustPanic(t *testing.T) {
 		}
 	}()
 
-	open, err := os.Open("testdata/classic.json")
+	filepath := "testdata/classic.json"
+	open, err := os.Open(filepath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	open.Close() // close it so we get an error!
-	reader := file.NewReader(open, json.Unmarshal)
+	err = open.Close() // close it so we get an error!
+	if err != nil {
+		t.Fatal(err)
+	}
+	badFile := file.NewReader(open, filepath, json.Unmarshal)
 
 	var buf bytes.Buffer
 	uconfig.UsageOutput = &buf
 
-	value := f.Config{}
-	uconfig.Must(&value, reader)
-}
-
-func TestMustPanicNew(t *testing.T) {
-
-	defer func() {
-		r := recover()
-
-		if r == nil {
-			t.Error("Was expecting panic but got nil")
-		}
-
-		expectErr := "Unexpected type, expecting a pointer to struct"
-
-		if err, ok := r.(error); !ok || err.Error() != expectErr {
-			t.Errorf("unexpected panic: %v", r)
-		}
-	}()
-
-	conf := f.Config{}
-
-	// passing non-pointer.
-	uconfig.Must(conf)
+	uconfig.Must[f.Config](badFile)
 }

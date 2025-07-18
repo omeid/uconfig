@@ -11,6 +11,7 @@ import (
 
 type fNested struct {
 	Pass   string `secret:""`
+	Named  string `secret:"NAME_KEY"`
 	Ignore string
 }
 
@@ -24,13 +25,13 @@ type fSecrets struct {
 }
 
 func TestSecret(t *testing.T) {
-
-	expect := fSecrets{
+	expect := &fSecrets{
 		Password:   "password",
 		Alt:        "altPassword",
 		EmptyValue: "",
 		Nested: fNested{
-			Pass: "sub-pass",
+			Pass:  "sub-pass",
+			Named: "nested-named",
 		},
 	}
 
@@ -38,11 +39,11 @@ func TestSecret(t *testing.T) {
 		"PASSWORD":    "password",
 		"AltPassword": "altPassword",
 		"NESTED_PASS": "sub-pass",
+		"NAME_KEY":    "nested-named",
 		"EMPTYVALUE":  "",
 	}
 
 	source := func(name string) (string, error) {
-
 		secret, ok := secrets[name]
 		if !ok {
 			return "", fmt.Errorf("couldn't find secret for %s", name)
@@ -50,14 +51,9 @@ func TestSecret(t *testing.T) {
 		return secret, nil
 	}
 
-	value := fSecrets{}
-	conf, err := uconfig.New(&value, secret.New(source))
-	if err != nil {
-		t.Fatal(err)
-	}
+	conf := uconfig.New[fSecrets](secret.New(source))
 
-	err = conf.Parse()
-
+	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,24 +61,16 @@ func TestSecret(t *testing.T) {
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)
 	}
-
 }
 
 func TestSecretErr(t *testing.T) {
-
 	source := func(name string) (string, error) {
-
 		return "", fmt.Errorf("No value found for: %s", name)
 	}
 
-	value := fSecrets{}
-	conf, err := uconfig.New(&value, secret.New(source))
+	conf := uconfig.New[fSecrets](secret.New(source))
 
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = conf.Parse()
+	_, err := conf.Parse()
 
 	if err == nil {
 		t.Fatal("Expected error but got nil")
@@ -93,26 +81,20 @@ func TestSecretErr(t *testing.T) {
 	if err.Error() != expect {
 		t.Fatalf("Expected: %s\nGot: %s", expect, err)
 	}
-
 }
 
 func TestSecretSetErr(t *testing.T) {
-
 	source := func(name string) (string, error) {
 		return "not a number", nil
 	}
 
-	value := struct {
+	type Counts struct {
 		Count int `secret:""`
-	}{}
-
-	conf, err := uconfig.New(&value, secret.New(source))
-
-	if err != nil {
-		t.Fatal(err)
 	}
 
-	err = conf.Parse()
+	conf := uconfig.New[Counts](secret.New(source))
+
+	_, err := conf.Parse()
 
 	if err == nil {
 		t.Fatal("Expected error but got nil")
@@ -123,5 +105,4 @@ func TestSecretSetErr(t *testing.T) {
 	if err.Error() != expect {
 		t.Fatalf("Expected: %s\nGot: %s", expect, err)
 	}
-
 }

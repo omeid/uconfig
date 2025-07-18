@@ -2,6 +2,7 @@
 package secret
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/omeid/uconfig/flat"
@@ -22,53 +23,49 @@ func New(source Sourcer) plugins.Plugin {
 	return &secret{source: source}
 }
 
+var ErrSecretNotFound = errors.New("secret not found")
+
 type secret struct {
 	fields flat.Fields
 	source Sourcer
 }
 
 func makeSecretName(name string) string {
-	name = strings.Replace(name, ".", "_", -1)
+	name = strings.ReplaceAll(name, ".", "_")
 	name = strings.ToUpper(name)
 
 	return name
 }
 
 func (v *secret) Visit(f flat.Fields) error {
-
 	v.fields = f
 
 	for _, f := range v.fields {
-		name, ok := f.Tag(tag)
 
-		// secrets are only used when tagged.
-		if !ok {
+		// secret only works with explicitly tagged.
+		if _, ok := f.Tag(tag); !ok {
 			continue
 		}
 
-		if name == "" {
-			name = makeSecretName(f.Name())
+		name, explicit := f.Name(tag)
+		if !explicit {
+			name = makeSecretName(name)
 		}
 
 		f.Meta()[tag] = name
-
 	}
 
 	return nil
 }
 
 func (v *secret) Parse() error {
-
 	for _, f := range v.fields {
-		name, ok := f.Meta()[tag]
-
-		// no name, no care.
-		if !ok {
+		name := f.Meta()[tag]
+		if name == "" || name == "-" {
 			continue
 		}
 
 		value, err := v.source(name)
-
 		if err != nil {
 			return err
 		}

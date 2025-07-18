@@ -2,7 +2,6 @@ package uconfig_test
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"testing"
@@ -10,22 +9,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/omeid/uconfig"
 	"github.com/omeid/uconfig/internal/f"
+	"github.com/omeid/uconfig/plugins/file"
 	"github.com/omeid/uconfig/plugins/secret"
 )
 
-func TestMain(m *testing.M) {
-	// for go test framework.
-	flag.Parse()
-
-	os.Exit(m.Run())
-}
-
-func TestClassicBasic(t *testing.T) {
+func TestLoadBasic(t *testing.T) {
 	expect := &f.Config{
 		Command: "run",
-
 		Anon: f.Anon{
-			Version: "from-flags",
+			Version: "version-from-env",
 		},
 
 		GoHard: true,
@@ -49,7 +41,7 @@ func TestClassicBasic(t *testing.T) {
 	}
 
 	// set some env vars to test env var and plugin orders.
-	err := os.Setenv("VERSION", "bad-value-overrided-with-flags")
+	err := os.Setenv("VERSION", "version-from-env")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,9 +50,9 @@ func TestClassicBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 	// patch the os.Args. for our tests.
-	os.Args = append(os.Args[:1], "-version=from-flags")
 
-	conf := uconfig.Classic[f.Config](files)
+	conf := uconfig.Load[f.Config](files)
+
 	value, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +63,7 @@ func TestClassicBasic(t *testing.T) {
 	}
 }
 
-func TestClassicWithSecret(t *testing.T) {
+func TestLoadWithSecret(t *testing.T) {
 	// Config is part of text fixtures.
 	type Creds struct {
 		APIKey   string `secret:""`
@@ -117,14 +109,68 @@ func TestClassicWithSecret(t *testing.T) {
 		return "", fmt.Errorf("Secret not found %s", name)
 	}
 
-	// patch the os.Args. for our tests.
-	os.Args = os.Args[:1]
-	err := os.Unsetenv("REDIS_ADDRESS")
+	err := os.Unsetenv("VERSION")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Unsetenv("REDIS_ADDRESS")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	conf := uconfig.Classic[Config](files, secret.New(SecretProvider))
+	conf := uconfig.Load[Config](files, secret.New(SecretProvider))
+
+	value, err := conf.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+}
+
+func TestLoadWithMultiFile(t *testing.T) {
+	expect := &f.Config{
+		Command: "run",
+		Anon: f.Anon{
+			Version: "version-from-env",
+		},
+
+		Redis: f.Redis{
+			Host: "from-envs",
+		},
+
+		Rethink: f.RethinkConfig{
+			Host: f.Host{
+				Address: "rethink-cluster",
+				Port:    "28015",
+			},
+			Db: "base",
+		},
+	}
+
+	options := uconfig.UnmarshalOptions{
+		".json": json.Unmarshal,
+	}
+
+	// set some env vars to test env var and plugin orders.
+	err := os.Setenv("VERSION", "version-from-env")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv("REDIS_ADDRESS", "from-envs")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	conf := uconfig.Load[f.Config](
+		nil,
+		file.NewMulti("plugins/file/testdata/config_rethink.json", options, true),
+	)
 
 	value, err := conf.Parse()
 	if err != nil {
@@ -136,10 +182,10 @@ func TestClassicWithSecret(t *testing.T) {
 	}
 }
 
-func TestClassicBadPlugin(t *testing.T) {
+func TestLoadBadPlugin(t *testing.T) {
 	var badPlugin BadPlugin
 
-	conf := uconfig.Classic[f.Config](nil, badPlugin)
+	conf := uconfig.Load[f.Config](nil, badPlugin)
 	_, err := conf.Parse()
 
 	if err == nil {
@@ -147,31 +193,6 @@ func TestClassicBadPlugin(t *testing.T) {
 	}
 
 	if err.Error() != "unsupported plugins. expecting a walker or visitor" {
-		t.Errorf("expected unsupported plugin error, got: %v", err)
-	}
-}
-
-func TestClassicCommand(t *testing.T) {
-	expect := &f.Config{
-		Command: "run",
-		Rethink: f.RethinkConfig{
-			Db: "primary",
-		},
-	}
-
-	// set some env vars to test env var and plugin orders.
-	err := os.Unsetenv("VERSION")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	conf := uconfig.Classic[f.Config](nil)
-	value, err := conf.Parse()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(expect, value); diff != "" {
-		t.Error(diff)
+		t.Errorf("Expected unsupported plugin error, got: %v", err)
 	}
 }

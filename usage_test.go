@@ -16,9 +16,10 @@ const expectedUsageMessage = `
 Supported Fields:
 FIELD                   FLAG                     ENV                     DEFAULT    GOODPLUGIN              SECRET              USAGE
 -----                   -----                    -----                   -------    ----------              ------              -----
+Command                 [command]                COMMAND                 run        Command                                     
 Version                 -version                 VERSION                            Version                                     
 GoHard                  -gohard                  GOHARD                             GoHard                                      
-Redis.Host              -redis-host              REDIS_HOST                         Redis.Host                                  
+Redis.Address           -redis-address           REDIS_ADDRESS                      Redis.Address                               
 Redis.Port              -redis-port              REDIS_PORT                         Redis.Port                                  
 Rethink.Host.Address    -rethink-host-address    RETHINK_HOST_ADDRESS               Rethink.Host.Address                        
 Rethink.Host.Port       -rethink-host-port       RETHINK_HOST_PORT                  Rethink.Host.Port                           
@@ -34,7 +35,8 @@ func (*UselessPluginVisitor) Parse() error { return nil }
 
 func (*UselessPluginVisitor) Visit(fields flat.Fields) error {
 	for _, f := range fields {
-		f.Meta()["goodplugin"] = f.Name()
+		name, _ := f.Name("goodplugin")
+		f.Meta()["goodplugin"] = name
 	}
 	return nil
 }
@@ -53,11 +55,10 @@ func TestUsage(t *testing.T) {
 	// one tag/field that isn't pre-weighted in "usage".
 	noopPlugin := &UselessPluginVisitor{}
 
-	value := f.Config{}
-
 	secretProvider := func(name string) (string, error) { return "top secret token", nil }
 
-	c, err := uconfig.Classic(&value, nil, secret.New(secretProvider), noopPlugin)
+	conf := uconfig.Classic[f.Config](nil, secret.New(secretProvider), noopPlugin)
+	_, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +71,7 @@ func TestUsage(t *testing.T) {
 		)
 	}
 
-	c.Usage()
+	conf.Usage()
 
 	output := stdout.String()
 
