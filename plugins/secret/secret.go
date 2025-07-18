@@ -2,6 +2,7 @@
 package secret
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/omeid/uconfig/flat"
@@ -21,6 +22,8 @@ type Sourcer func(string) (string, error)
 func New(source Sourcer) plugins.Plugin {
 	return &secret{source: source}
 }
+
+var ErrSecretNotFound = errors.New("secret not found")
 
 type secret struct {
 	fields flat.Fields

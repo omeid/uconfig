@@ -21,8 +21,9 @@ type Config struct {
 }
 
 var files = uconfig.Files{
-	{"config.json", json.Unmarshal, true},
-	// you can of course add as many files
+	{Path: "config.json", Unmarshal: json.Unmarshal, Optional: true},
+	// or short form {"config.json", json.Unmarshal, true},
+	// And, of course, you can of course add as many files
 	// as you want, and they will be applied
 	// in the given order.
 }
