@@ -55,11 +55,17 @@ type Config struct {
 
 	Redis    redis.Config
 	Database database.Config
+
+	// the flags plugin allows capturing a single Command after the flags.
+	// so you can run myprogram -flag=value -s -blah=bleh stop|start|stop and so on.
+	Mode string `default:"start" flag:",command" usage:"run|start|stop"`
 }
 
 var files = uconfig.Files{
-	{"config.json", json.Unmarshal, true},
-	// you can of course add as many files
+	{Path: "/etc/demo-app/config.json", Unmarshal: json.Unmarshal, Optional: true},
+	{Path: "config.json", Unmarshal: json.Unmarshal, Optional: true},
+	// or short form {"config.json", json.Unmarshal, true},
+	// And, of course, you can of course add as many files
 	// as you want, and they will be applied
 	// in the given order.
 }
@@ -84,22 +90,31 @@ Now lets run our program:
 
 ```sh
 $ go run main.go -h
+Usage:
+    main [flags] [command]
 
-Supported Fields:
-FIELD                FLAG                  ENV                  DEFAULT                      USAGE
------                -----                 -----                -------                      -----
-Hosts                -hosts                HOSTS                localhost,localhost.local    the ip or domains to bind to
-Redis.Address        -redis-address        REDIS_ADDRESS        redis-master                 
-Redis.Port           -redis-port           REDIS_PORT           6379                         
-Redis.Password       -redis-password       REDIS_PASSWORD                                    
-Redis.DB             -redis-db             REDIS_DB             0                            
-Redis.Expire         -redis-expire         REDIS_EXPIRE         5s                           
-Database.Address     -database-address     DATABASE_ADDRESS     localhost                    
-Database.Port        -database-port        DATABASE_PORT        28015                        
-Database.Database    -database-database    DATABASE_DATABASE    my-project                   
+Configurations:
+FIELD                FLAG                  ENV                 DEFAULT                      USAGE
+-----                -----                 -----               -------                      -----
+Hosts                -hosts                HOSTS               localhost,localhost.local    the ip or domains to bind to
+Redis.Address        -redis-address        REDIS_ADDRESS       redis-master                 
+Redis.Port           -redis-port           REDIS_PORT          6379                         
+Redis.Password       -redis-password       REDIS_PASSWORD                                   
+Redis.DB             -redis-db             REDIS_DB            0                            
+Redis.Expire         -redis-expire         REDIS_EXPIRE        5s                           
+Database.Address     -database-address     DATABASE_ADDRESS    localhost                    
+Database.Port        -database-port        SERVICE_PORT        28015                        
+Database.Database    -database-database    DB                  my-project                   
+Mode                 [command]             MODE                start                        run|start|stop
 
+Configuration Files:
+    /etc/demo-app/config.json
+    config.json
+
+```
 $ go run main.go 
 
+```json
 {
  "Hosts": [
   "localhost",
@@ -116,7 +131,8 @@ $ go run main.go
   "Address": "localhost",
   "Port": "28015",
   "Database": "my-project"
- }
+ },
+ "Mode": "start"
 }
 
 ```
@@ -171,19 +187,23 @@ type Config struct {
 
 Which should give you the following settings:
 
-```
-Supported Fields:
-FIELD                    FLAG                      ENV                      DEFAULT                      USAGE
------                    -----                     -----                    -------                      -----
-Hosts                    -hosts                    HOSTS                    localhost,localhost.local    the ip or domains to bind to
-Redis.Port               -redis-port               REDIS_PORT               6379
-Redis.Password           -redis-password           REDIS_PASSWORD
-Redis.DB                 -redis-db                 REDIS_DB                 0
-Redis.Expire             -redis-expire             REDIS_EXPIRE             5s
-Database.Address         -database-address         DATABASE_ADDRESS         localhost
-Database.Service.Port    -database-service-port    DATABASE_SERVICE_PORT    28015
-Database.Database        -main-db-db               DB_NAME                  my-project
-exit status 1
+```sh
+$ go run main.go -h
+Usage:
+    main [flags] [command]
+
+Configurations:
+FIELD                  FLAG                    ENV                    DEFAULT                      USAGE
+-----                  -----                   -----                  -------                      -----
+Hosts                  -hosts                  HOSTS                  localhost,localhost.local    the ip or domains to bind to
+Redis.Address          -redis-address          REDIS_ADDRESS          redis-master                 
+Redis.Port             -redis-port             REDIS_PORT             6379                         
+Redis.Password         -redis-password         REDIS_PASSWORD                                      
+Redis.DB               -redis-db               REDIS_DB               0                            
+Redis.Expire           -redis-expire           REDIS_EXPIRE           5s                           
+Database.Address       -database-address       DATABASE_ADDRESS       localhost                    
+Database.Database      -main-db-db             DB_NAME                my-project
+Database.Service.Port  -database-service-port  DATABASE_SERVICE_PORT  28015
 ```
 
 
@@ -209,52 +229,49 @@ Unlike most other plugins, secret requires explicit `secret:""` tag, this is bec
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+    "encoding/json"
+    "fmt"
 
-	"github.com/omeid/uconfig"
-	"github.com/omeid/uconfig/examples/secrets/secretsource"
-	"github.com/omeid/uconfig/plugins/secret"
+    "github.com/omeid/uconfig"
+    "github.com/omeid/uconfig/plugins/secret"
+
+    "github.com/omeid/uconfig/examples/secrets/secretsource"
 )
 
 // Creds is an example of a config struct that uses secret values.
 type Creds struct {
-	// by default, secret plugin will generate a name that is identical
-	// to env plugin, SCREAM_SNAKE_CASE, so in this case it will be
-	// APIKEY however, following the standard uConfig nesting rules
-	// in Config struct below, it becomes CREDS_APIKEY.
-	APIKey string `secret:""`
-	// or you can provide your own name, which will not be impacted
-	// by nesting or the field name.
-	APIToken string `secret:"API_TOKEN"`
+    // by default, secret plugin will generate a name that is identical
+    // to env plugin, SCREAM_SNAKE_CASE, so in this case it will be
+    // APIKEY however, following the standard uConfig nesting rules
+    // in Config struct below, it becomes CREDS_APIKEY.
+    APIKey string `secret:""`
+    // or you can provide your own name, which will not be impacted
+    // by nesting or the field name.
+    APIToken string `secret:"API_TOKEN"`
 }
 
 type Config struct {
-	Creds Creds
-}
-
-var files = uconfig.Files{
-	{"config.json", json.Unmarshal, false},
+    Creds Creds
 }
 
 var secrets = secret.New(func(name string) (string, error) {
-	// you're free to grab the secret based on the name from wherever
-	// you please, aws secrets-manager, hashicorp vault, or wherever.
-	value, ok := secretsource.Get(name)
-	if !ok {
-		return "", secret.ErrSecretNotFound
-	}
+    // you're free to grab the secret based on the name from wherever
+    // you please, aws secrets-manager, hashicorp vault, or wherever.
+    value, ok := secretsource.Get(name)
+    if !ok {
+        return "", secret.ErrSecretNotFound
+    }
 
-	return value, nil
+    return value, nil
 })
 
 func main() {
-	// then you can use the secretPlugin with uConfig like any other plugin.
-	// Lucky, uconfig.Classic allows passing more plugins, which means
-	// you can simply do the following for flags, envs, files, and secrets!
-	conf := uconfig.Classic[Config](files, secrets).Run()
+    // then you can use the secretPlugin with uConfig like any other plugin.
+    // Lucky, uconfig.Classic allows passing more plugins, which means
+    // you can simply do the following for flags, envs, files, and secrets!
+    conf := uconfig.Classic[Config](nil, secrets).Run()
 
-	fmt.Printf("we got an API Key: %s\n", conf.Creds.APIKey)
+    fmt.Printf("we got an API Key: %s\n", conf.Creds.APIKey)
 }
 ```
 

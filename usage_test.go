@@ -2,6 +2,7 @@ package uconfig_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -12,11 +13,12 @@ import (
 	"github.com/omeid/uconfig/plugins/secret"
 )
 
-const expectedUsageMessage = `
-Supported Fields:
+const expectedUsageMessage = `Usage:
+    uconfig.test [flags] [command]
+
+Configurations:
 FIELD                   FLAG                     ENV                     DEFAULT    GOODPLUGIN              SECRET              USAGE
 -----                   -----                    -----                   -------    ----------              ------              -----
-Command                 [command]                COMMAND                 run        Command                                     
 Version                 -version                 VERSION                            Version                                     
 GoHard                  -gohard                  GOHARD                             GoHard                                      
 Redis.Address           -redis-address           REDIS_ADDRESS                      Redis.Address                               
@@ -25,6 +27,11 @@ Rethink.Host.Address    -rethink-host-address    RETHINK_HOST_ADDRESS           
 Rethink.Host.Port       -rethink-host-port       RETHINK_HOST_PORT                  Rethink.Host.Port                           
 Rethink.Db              -rethink-db              RETHINK_DB              primary    Rethink.Db                                  main database used by our application
 Rethink.Password        -rethink-password        RETHINK_PASSWORD                   Rethink.Password        RETHINK_PASSWORD    
+Command                 [command]                COMMAND                 run        Command                                     
+
+Configuration Files:
+    /etc/app/config.yaml
+    config.json
 `
 
 type UselessPluginVisitor struct {
@@ -39,6 +46,11 @@ func (*UselessPluginVisitor) Visit(fields flat.Fields) error {
 		f.Meta()["goodplugin"] = name
 	}
 	return nil
+}
+
+var files = uconfig.Files{
+	{Path: "/etc/app/config.yaml", Unmarshal: json.Unmarshal, Optional: true},
+	{Path: "config.json", Unmarshal: json.Unmarshal, Optional: true}, // just for testing of file listing.
 }
 
 func TestUsage(t *testing.T) {
@@ -57,7 +69,7 @@ func TestUsage(t *testing.T) {
 
 	secretProvider := func(name string) (string, error) { return "top secret token", nil }
 
-	conf := uconfig.Classic[f.Config](nil, secret.New(secretProvider), noopPlugin)
+	conf := uconfig.Classic[f.Config](files, secret.New(secretProvider), noopPlugin)
 	_, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)

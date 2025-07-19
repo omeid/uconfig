@@ -77,6 +77,11 @@ func New(path string, unmarshal Unmarshal, config Config) plugins.Plugin {
 	return plug
 }
 
+type Plugin interface {
+	plugins.Plugin
+	FilePath() string
+}
+
 type walker struct {
 	filepath  string
 	src       io.Reader
@@ -84,6 +89,10 @@ type walker struct {
 	unmarshal Unmarshal
 
 	err error
+}
+
+func (w *walker) FilePath() string {
+	return w.filepath
 }
 
 func (w *walker) Walk(conf any) error {

@@ -85,6 +85,12 @@ func (f *fieldFlag) IsBoolFlag() bool {
 	return reflect.ValueOf(f.Field.Interface()).Kind() == reflect.Bool
 }
 
+// Indicates whatever the field is "command" field.
+// Used by usage and maybe used for other plugins to exclude command.
+func IsCommand(f flat.Field) bool {
+	return f.Meta()[tag] == commandFieldName
+}
+
 func (v *visitor) Visit(fields flat.Fields) error {
 	v.fields = fields
 

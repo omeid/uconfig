@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/plugins"
+	"github.com/omeid/uconfig/plugins/file"
+	"github.com/omeid/uconfig/plugins/flag"
 )
 
 const usageTag = "usage"
@@ -28,18 +31,20 @@ func (c *config[C]) Usage() {
 	headers := getHeaders(c.fields)
 
 	w := tabwriter.NewWriter(UsageOutput, 0, 0, 4, ' ', 0)
-	_, _ = fmt.Fprintf(w, "\nSupported Fields:\n")
+	_, _ = fmt.Fprintf(w, "Usage:\n\t%s [flags] [command]\n", path.Base(os.Args[0]))
+	_, _ = fmt.Fprintf(w, "\nConfigurations:\n")
 	_, _ = fmt.Fprintln(w, strings.ToUpper(strings.Join(headers, "\t")))
 
 	dashes := make([]string, len(headers))
 	for i, f := range headers {
-		n := len(f)
-		if n < 5 {
-			n = 5
-		}
+		n := max(len(f), 5)
 		dashes[i] = strings.Repeat("-", n)
 	}
 	_, _ = fmt.Fprintln(w, strings.Join(dashes, "\t"))
+
+	sort.SliceStable(c.fields, func(i, j int) bool {
+		return flag.IsCommand(c.fields[j]) // move command to last.
+	})
 
 	for _, f := range c.fields {
 
@@ -52,6 +57,23 @@ func (c *config[C]) Usage() {
 		}
 
 		_, _ = fmt.Fprintln(w, strings.Join(values, "\t"))
+
+	}
+
+	files := []string{}
+
+	for _, p := range c.plugins {
+		if p, ok := p.(file.Plugin); ok {
+			files = append(files, p.FilePath())
+		}
+	}
+
+	if len(files) > 0 {
+		_, _ = fmt.Fprintf(w, "\nConfiguration Files:\n")
+		for _, fp := range files {
+			_, _ = fmt.Fprintf(w, "\t%s\n", fp)
+		}
+
 	}
 
 	err := w.Flush()

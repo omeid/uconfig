@@ -18,9 +18,14 @@ type Config struct {
 
 	Redis    redis.Config
 	Database database.Config
+
+	// the flags plugin allows capturing a single Command after the flags.
+	// so you can run myprogram -flag=value -s -blah=bleh stop|start|stop and so on.
+	Mode string `default:"start" flag:",command" usage:"run|start|stop"`
 }
 
 var files = uconfig.Files{
+	{Path: "/etc/demo-app/config.json", Unmarshal: json.Unmarshal, Optional: true},
 	{Path: "config.json", Unmarshal: json.Unmarshal, Optional: true},
 	// or short form {"config.json", json.Unmarshal, true},
 	// And, of course, you can of course add as many files
