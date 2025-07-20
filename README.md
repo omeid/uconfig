@@ -6,10 +6,7 @@ Lightweight, zero-dependency, and extendable configuration management.
 uConfig is extremely light and extendable configuration management library with zero dependencies. Every aspect of configuration is provided through a _plugin_, which means you can have any combination of flags, environment variables, defaults, secret providers, Kubernetes Downward API, and any combination of configuration files and formats including json, toml, cue, or just about anything you want, and only what you want, through plugins.
 
 
-uConfig takes the config schema as a struct decorated with tags, nesting is supported.
-
-Supports all basic types, time.Duration, and any other type through `encoding.TextUnmarshaler` interface.
-See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package for details.
+To use uConfig, you simply define the configuration struct for your services and application, and uConfig does all the heavy-lifting. It just works.
 
 ## Example Configuration:
 
@@ -22,6 +19,7 @@ type Config struct {
   Database string `default:"my-project"`
 }
 ```
+
 ```go
 package redis
 // Config describes the requirement for redis client.
@@ -47,6 +45,7 @@ import (
 	"github.com/omeid/uconfig/examples/sample/database"
 	"github.com/omeid/uconfig/examples/sample/redis"
 )
+
 
 // Config is our application config.
 type Config struct {
@@ -112,8 +111,9 @@ Configuration Files:
     config.json
 
 ```
+```sh
 $ go run main.go 
-
+```
 ```json
 {
  "Hosts": [
@@ -137,6 +137,8 @@ $ go run main.go
 
 ```
 
+uConfig supports all basic types, time.Duration, slices, and any other type through `encoding.TextUnmarshaler` interface.
+See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package for details.
 
 ## Custom names:
 
@@ -146,8 +148,7 @@ Sometimes you might want to use a different env var, or flag name for backwards 
 
 You can change the name of a field as seen by `uconfig`.
 
-Please not that this flag only works for walker plugins (flags, env, anything flat) and for Visitor plugins (file, stream, et al) you will need
-to use encoder specific tags like `json:"field_name"` and so on.
+Please note that this flag only works for walker plugins (flags, env, anything flat) and for Visitor plugins (file, stream, et al) you will need to use encoder specific tags like `json:"field_name"` and so on.
 
 
 2. Plugin specific tags
@@ -156,7 +157,7 @@ Most plugins support controlling the field name as seen by that specific plugin.
 
 
 For both type of tags, you can prefix them with `.` to rename the field only at the struct level.
-See the `Service.Port` and DB_NAME examples below.
+See the `Service.Port` and `DB_NAME` examples below.
 
 ```go
 package database
@@ -164,8 +165,8 @@ package database
 // Config holds the database configurations.
 type Database struct {
   Address  string `default:"localhost"`
-  Port     string `default:"28015" uconfig:".Service.Port"`
-  Database string `default:"my-project" env:"DB_NAME" flag:"main-db-name"`
+  Port     string `default:"28015" uconfig:".Service.Port"` // field level rename.
+  Database string `default:"my-project" env:"DB_NAME" flag:"main-db-name"` // plugin specific rename.
 }
 ```
 
