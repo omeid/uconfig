@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/omeid/uconfig"
 
@@ -15,6 +16,9 @@ import (
 type Config struct {
 	// yes you can have slices.
 	Hosts []string `default:"localhost,localhost.local" usage:"the ip or domains to bind to"`
+
+	// and maps too.
+	RegionTimeouts map[string]time.Duration `default:"us:500ms,eu:1s,ap:1200ms" usage:"per-region request timeouts"`
 
 	Redis    redis.Config
 	Database database.Config

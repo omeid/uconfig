@@ -103,7 +103,13 @@ type Types struct {
 	Float32  float32
 	Float64  float64
 
-	// MapStringInt    map[string]int
+	MapStringString   map[string]string
+	MapStringInt      map[string]int
+	MapIntInt         map[int]int
+	MapStringFloat    map[string]float64
+	MapStringUint     map[string]uint
+	MapIntString      map[int]string
+	MapStringDuration map[string]time.Duration
 
 	SliceString   []string
 	SliceInt      []int

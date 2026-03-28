@@ -52,6 +52,9 @@ type Config struct {
 	// yes you can have slices.
 	Hosts []string `default:"localhost,localhost.local" usage:"the ip or domains to bind to"`
 
+	// and maps too.
+	RegionTimeouts map[string]time.Duration `default:"us:500ms,eu:1s,ap:1200ms" usage:"per-region request timeouts"`
+
 	Redis    redis.Config
 	Database database.Config
 
@@ -137,7 +140,7 @@ $ go run main.go
 
 ```
 
-uConfig supports all basic types, time.Duration, slices, and any other type through `encoding.TextUnmarshaler` interface.
+uConfig supports all basic types, time.Duration, slices, maps, and any other type through `encoding.TextUnmarshaler` interface. Maps use `key:value,key:value` syntax from flags and env vars (e.g. `-my-map "a:1,b:2"`).
 See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package for details.
 
 ## Custom names:

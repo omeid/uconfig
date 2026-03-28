@@ -99,8 +99,8 @@ func (f *field) Set(value string) error {
 		return f.setFloat(value)
 	case reflect.Slice:
 		return f.setSlice(value)
-
-		// Soon case reflect.Map:
+	case reflect.Map:
+		return f.setMap(value)
 
 		// Maybe case reflect.Array:
 
@@ -173,9 +173,9 @@ func (f *field) setFloat(value string) error {
 
 func (f *field) setSlice(value string) error {
 	t := f.field.Type()
-	setSliceElem := setSliceElem(t.Elem())
+	setter := typeSetter(t.Elem())
 
-	if setSliceElem == nil {
+	if setter == nil {
 		return nil
 	}
 
@@ -185,7 +185,7 @@ func (f *field) setSlice(value string) error {
 	f.field.Set(reflect.MakeSlice(t, valuesLen, valuesLen))
 
 	for i, value := range values {
-		err := setSliceElem(f.field.Index(i), strings.TrimSpace(value))
+		err := setter(f.field.Index(i), strings.TrimSpace(value))
 		if err != nil {
 			return err
 		}
@@ -194,38 +194,83 @@ func (f *field) setSlice(value string) error {
 	return nil
 }
 
-func setSliceElem(elem reflect.Type) func(reflect.Value, string) error {
+// setMap parses "key:value,key:value" into a map.
+// Supports all types that typeSetter handles for both keys and values.
+func (f *field) setMap(value string) error {
+	t := f.field.Type()
+
+	setKey := typeSetter(t.Key())
+	if setKey == nil {
+		return nil
+	}
+
+	setVal := typeSetter(t.Elem())
+	if setVal == nil {
+		return nil
+	}
+
+	m := reflect.MakeMap(t)
+
+	entries := strings.Split(value, ",")
+	for _, entry := range entries {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		rawKey, rawVal, ok := strings.Cut(entry, ":")
+		if !ok {
+			continue
+		}
+
+		k := reflect.New(t.Key()).Elem()
+		if err := setKey(k, strings.TrimSpace(rawKey)); err != nil {
+			return err
+		}
+
+		v := reflect.New(t.Elem()).Elem()
+		if err := setVal(v, strings.TrimSpace(rawVal)); err != nil {
+			return err
+		}
+
+		m.SetMapIndex(k, v)
+	}
+
+	f.field.Set(m)
+	return nil
+}
+
+func typeSetter(elem reflect.Type) func(reflect.Value, string) error {
 	if elem.Implements(textUnmarshalerType) {
-		return setSliceElemUnmarshale
+		return typeSetterUnmarshale
 	}
 
 	if reflect.PointerTo(elem).Implements(textUnmarshalerType) {
-		return setSliceElemPtrUnmarshale
+		return typeSetterPtrUnmarshale
 	}
 
 	switch elem.Kind() {
 
 	case reflect.String:
-		return setSliceElemString
+		return typeSetterString
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if elem.String() == "time.Duration" {
-			return setSliceElemDuration
+			return typeSetterDuration
 		}
 
-		return setSliceElemInt
+		return typeSetterInt
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return setSliceElemUint
+		return typeSetterUint
 
 	case reflect.Float32, reflect.Float64:
-		return setSliceElemFloat
+		return typeSetterFloat
 	}
 
 	return nil
 }
 
-func setSliceElemUnmarshale(f reflect.Value, value string) error {
+func typeSetterUnmarshale(f reflect.Value, value string) error {
 	ptr := reflect.New(f.Type().Elem())
 
 	ut := ptr.MethodByName("UnmarshalText")
@@ -239,7 +284,7 @@ func setSliceElemUnmarshale(f reflect.Value, value string) error {
 	return nil
 }
 
-func setSliceElemPtrUnmarshale(f reflect.Value, value string) error {
+func typeSetterPtrUnmarshale(f reflect.Value, value string) error {
 	ptr := reflect.New(f.Type())
 
 	ut := ptr.MethodByName("UnmarshalText")
@@ -253,12 +298,12 @@ func setSliceElemPtrUnmarshale(f reflect.Value, value string) error {
 	return nil
 }
 
-func setSliceElemString(f reflect.Value, value string) error {
+func typeSetterString(f reflect.Value, value string) error {
 	f.SetString(value)
 	return nil
 }
 
-func setSliceElemDuration(f reflect.Value, value string) error {
+func typeSetterDuration(f reflect.Value, value string) error {
 	duration, err := time.ParseDuration(value)
 	if err != nil {
 		return err
@@ -268,19 +313,19 @@ func setSliceElemDuration(f reflect.Value, value string) error {
 	return nil
 }
 
-func setSliceElemInt(f reflect.Value, value string) error {
+func typeSetterInt(f reflect.Value, value string) error {
 	v, err := strconv.ParseInt(value, 0, 64)
 	f.SetInt(v)
 	return err
 }
 
-func setSliceElemUint(f reflect.Value, value string) error {
+func typeSetterUint(f reflect.Value, value string) error {
 	v, err := strconv.ParseUint(value, 0, 64)
 	f.SetUint(v)
 	return err
 }
 
-func setSliceElemFloat(f reflect.Value, value string) error {
+func typeSetterFloat(f reflect.Value, value string) error {
 	v, err := strconv.ParseFloat(value, 64)
 	f.SetFloat(v)
 	return err

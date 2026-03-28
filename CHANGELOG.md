@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.9.0
+
+### Added
+- **Map support in flat package.** Maps can now be set from flat sources like flags and env vars using `key:value,key:value` syntax (e.g. `-my-map "a:1,b:2"`). Supports all combinations of string, int, uint, and float key/value types, plus `TextUnmarshaler` and `time.Duration` values.
+
+## v0.8.0
+
+### Added
+- **Generic API.** `uconfig.Classic[T]()` and `uconfig.Load[T]()` for type-safe configuration loading.
+- **Command support.** Last positional argument is treated as a command via `flag:",command"` tag.
+- **`uconfig` struct tag.** Rename fields for flags and env vars with dot notation (e.g. `uconfig:"Pre.Sync"` gives `-pre-sync` flag and `PRE_SYNC` env var).
+
 ## v0.7
 
 ### Breaking Changes

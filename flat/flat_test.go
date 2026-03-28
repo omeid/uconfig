@@ -69,8 +69,13 @@ func TestFlattenTypes(t *testing.T) {
 		"Float64":  "1.2",
 		"Duration": "5s",
 
-		// "MapStringString": "a:aval,bbval",
-		// "MapStringInt":    "one:1,two:2",
+		"MapStringString":   "a:aval,b:bval",
+		"MapStringInt":      "one:1,two:2",
+		"MapIntInt":         "1:10,2:20",
+		"MapStringFloat":    "pi:3.14,e:2.72",
+		"MapStringUint":     "port:8080,debug:1",
+		"MapIntString":      "1:first,2:second",
+		"MapStringDuration": "us:500ms,eu:1s,ap:1200ms",
 
 		"SliceString":   "hello,world",
 		"SliceInt":      "1, 2,3",
@@ -101,9 +106,14 @@ func TestFlattenTypes(t *testing.T) {
 		Float64:  1.2,
 		Duration: time.Duration(5 * time.Second),
 
-		// Duration:        time.Second * 5,
-		// MapStringString: map[string]string{"a": "aval", "b": "bval"},
-		// MapStringInt:    map[string]int{"one": 1, "two": 2},
+		MapStringString:   map[string]string{"a": "aval", "b": "bval"},
+		MapStringInt:      map[string]int{"one": 1, "two": 2},
+		MapIntInt:         map[int]int{1: 10, 2: 20},
+		MapStringFloat:    map[string]float64{"pi": 3.14, "e": 2.72},
+		MapStringUint:     map[string]uint{"port": 8080, "debug": 1},
+		MapIntString:      map[int]string{1: "first", 2: "second"},
+		MapStringDuration: map[string]time.Duration{"us": 500 * time.Millisecond, "eu": 1 * time.Second, "ap": 1200 * time.Millisecond},
+
 		SliceString:   []string{"hello", "world"},
 		SliceInt:      []int{1, 2, 3},
 		SliceInt32:    []int{1, 2, 3},
