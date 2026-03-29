@@ -60,7 +60,7 @@ func (c *config[C]) Usage() {
 
 	}
 
-	files := file.FilePaths(c.plugins)
+	files := file.FileNames(c.plugins)
 
 	if len(files) > 0 {
 		_, _ = fmt.Fprintf(w, "\nConfiguration Files:\n")

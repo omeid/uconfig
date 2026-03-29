@@ -41,6 +41,7 @@ import (
 	"os"
 
 	"github.com/omeid/uconfig"
+	"github.com/omeid/uconfig/plugins/file"
 
 	"github.com/omeid/uconfig/examples/sample/database"
 	"github.com/omeid/uconfig/examples/sample/redis"
@@ -64,12 +65,8 @@ type Config struct {
 }
 
 var files = uconfig.Files{
-	{Path: "/etc/demo-app/config.json", Unmarshal: json.Unmarshal, Optional: true},
-	{Path: "config.json", Unmarshal: json.Unmarshal, Optional: true},
-	// or short form {"config.json", json.Unmarshal, true},
-	// And, of course, you can of course add as many files
-	// as you want, and they will be applied
-	// in the given order.
+	{Path: file.Workspace(".demo-app/config.json"), Unmarshal: json.Unmarshal, Optional: true},
+	{Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
 }
 
 var conf = uconfig.Classic[Config](files)
@@ -110,8 +107,8 @@ Database.Database    -database-database    DB                  my-project
 Mode                 [command]             MODE                start                        run|start|stop
 
 Configuration Files:
-    /etc/demo-app/config.json
-    config.json
+    workspace: .demo-app/config.json
+    relative:  config.json
 
 ```
 ```sh
@@ -142,6 +139,26 @@ $ go run main.go
 
 uConfig supports all basic types, time.Duration, slices, maps, and any other type through `encoding.TextUnmarshaler` interface. Maps use `key:value,key:value` syntax from flags and env vars (e.g. `-my-map "a:1,b:2"`).
 See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package for details.
+
+## File Paths
+
+Config file paths are specified using `file.Path` constructors. Paths are resolved lazily at parse time, not at declaration time, making them safe to use in `var` declarations and compatible with live reload via [uconfig-watch](https://github.com/omeid/uconfig-watch).
+
+| Constructor | Usage output |
+|---|---|
+| `file.Absolute("/etc/app/config.json")` | `absolute:  /etc/app/config.json` |
+| `file.Relative("config.json")` | `relative:  config.json` |
+| `file.Workspace(".myapp/config")` | `workspace: .myapp/config` |
+
+The name passed to each constructor is shown in the `-h` usage output as-is, regardless of what the path resolves to on disk.
+
+```go
+var files = uconfig.Files{
+	{Path: file.Workspace(".myapp/config.json"), Unmarshal: json.Unmarshal, Optional: true},
+	{Path: file.Absolute("/etc/myapp/config.json"), Unmarshal: json.Unmarshal, Optional: true},
+	{Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
+}
+```
 
 ## Custom names:
 
@@ -341,7 +358,7 @@ For live config file watching and reload, see [uconfig-watch](https://github.com
 | [defaults](plugins/defaults) | Visitor | Sets default values from `default` struct tags |
 | [env](plugins/env) | Visitor | Reads environment variables |
 | [flag](plugins/flag) | Visitor | Command-line flags with `-h` / `--help` support |
-| [file](plugins/file) | Walker | Loads config from files (JSON, TOML, etc.). Re-reads on each `Parse()` |
+| [file](plugins/file) | Walker | Loads config from files (JSON, TOML, etc.) with lazy path resolution via `file.Absolute`, `file.Relative`, and `file.Workspace` |
 | [secret](plugins/secret) | Visitor | Loads secrets from external providers |
 
 ### External Plugins

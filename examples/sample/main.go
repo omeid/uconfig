@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/omeid/uconfig"
+	"github.com/omeid/uconfig/plugins/file"
 
 	"github.com/omeid/uconfig/examples/sample/database"
 	"github.com/omeid/uconfig/examples/sample/redis"
@@ -29,8 +30,8 @@ type Config struct {
 }
 
 var files = uconfig.Files{
-	{Path: "/etc/demo-app/config.json", Unmarshal: json.Unmarshal, Optional: true},
-	{Path: "config.json", Unmarshal: json.Unmarshal, Optional: true},
+	{Path: file.Absolute("/etc/demo-app/config.json"), Unmarshal: json.Unmarshal, Optional: true},
+	{Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
 	// or short form {"config.json", json.Unmarshal, true},
 	// And, of course, you can of course add as many files
 	// as you want, and they will be applied

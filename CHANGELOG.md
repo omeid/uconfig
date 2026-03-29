@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.13.0
+
+### Changed
+- **`Files.Path` is now `file.Path`** (a struct with `Name` and `Resolve`). Use the constructors `file.Absolute`, `file.Relative`, or `file.Workspace` to create paths. This enables lazy resolution — paths are resolved during `Walk`, not at declaration time.
+- **Usage output shows display names.** `FileNames` returns the user-provided path names for help output, while `FilePaths` returns resolved filesystem paths for watchers and other consumers.
+
+### Added
+- **`file.Workspace` config file discovery.** Walks up the directory tree from the working directory looking for a config file by relative path (e.g. `.myapp/config`), similar to how git finds `.git` or eslint finds `.eslintrc`.
+- **`file.Absolute` and `file.Relative` path constructors.** `Absolute` wraps a fixed path; `Relative` resolves against the working directory at call time.
+- **`file.FileNames` helper.** Returns display names from file plugins for usage output.
+
 ## v0.12.0
 
 ### Changed

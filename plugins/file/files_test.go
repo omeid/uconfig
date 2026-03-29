@@ -35,9 +35,9 @@ func TestFiles(t *testing.T) {
 	}
 
 	files := file.Files{
-		{"testdata/config_rethink.json", json.Unmarshal, true},
-		{"testdata/config_partial.json", json.Unmarshal, true},
-		{"testdata/.local.json", json.Unmarshal, false},
+		{file.Relative("testdata/config_rethink.json"), json.Unmarshal, true},
+		{file.Relative("testdata/config_partial.json"), json.Unmarshal, true},
+		{file.Relative("testdata/.local.json"), json.Unmarshal, false},
 	}
 
 	os.Args = os.Args[:1]

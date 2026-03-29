@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/omeid/uconfig"
 	"github.com/omeid/uconfig/internal/f"
+	"github.com/omeid/uconfig/plugins/file"
 	"github.com/omeid/uconfig/plugins/secret"
 )
 
@@ -45,7 +46,7 @@ func TestClassicBasic(t *testing.T) {
 	}
 
 	files := uconfig.Files{
-		{"testdata/classic.json", json.Unmarshal, true},
+		{file.Relative("testdata/classic.json"), json.Unmarshal, true},
 	}
 
 	// set some env vars to test env var and plugin orders.
@@ -105,7 +106,7 @@ func TestClassicWithSecret(t *testing.T) {
 	}
 
 	files := uconfig.Files{
-		{"testdata/classic.json", json.Unmarshal, true},
+		{file.Relative("testdata/classic.json"), json.Unmarshal, true},
 	}
 
 	SecretProvider := func(name string) (string, error) {

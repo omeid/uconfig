@@ -10,6 +10,7 @@ import (
 	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/internal/f"
 	"github.com/omeid/uconfig/plugins"
+	"github.com/omeid/uconfig/plugins/file"
 	"github.com/omeid/uconfig/plugins/secret"
 )
 
@@ -30,8 +31,8 @@ Rethink.Password        -rethink-password        RETHINK_PASSWORD               
 Command                 [command]                COMMAND                 run        Command                                     
 
 Configuration Files:
-    /etc/app/config.yaml
-    config.json
+    absolute:  /etc/app/config.yaml
+    relative:  config.json
 `
 
 type UselessPluginVisitor struct {
@@ -49,8 +50,8 @@ func (*UselessPluginVisitor) Visit(fields flat.Fields) error {
 }
 
 var files = uconfig.Files{
-	{Path: "/etc/app/config.yaml", Unmarshal: json.Unmarshal, Optional: true},
-	{Path: "config.json", Unmarshal: json.Unmarshal, Optional: true}, // just for testing of file listing.
+	{Path: file.Absolute("/etc/app/config.yaml"), Unmarshal: json.Unmarshal, Optional: true},
+	{Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true}, // just for testing of file listing.
 }
 
 func TestUsage(t *testing.T) {

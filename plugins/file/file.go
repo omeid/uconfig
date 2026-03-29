@@ -12,7 +12,7 @@ import (
 // Files represents a set of file paths and the appropriate
 // unmarshal function for the given file.
 type Files []struct {
-	Path      string
+	Path      Path
 	Unmarshal Unmarshal
 	Optional  bool
 }
@@ -22,13 +22,12 @@ type Files []struct {
 func (f Files) Plugins() []plugins.Plugin {
 	ps := make([]plugins.Plugin, 0, len(f))
 	for _, f := range f {
-		fp := New(
-			f.Path,
-			f.Unmarshal,
-			Config{Optional: f.Optional},
-		)
-
-		ps = append(ps, fp)
+		ps = append(ps, &walker{
+			name:      f.Path.Name,
+			resolve:   f.Path.Resolve,
+			unmarshal: f.Unmarshal,
+			optional:  f.Optional,
+		})
 	}
 
 	return ps
@@ -44,6 +43,7 @@ type Unmarshal func(src []byte, v any) error
 func NewReader(src io.Reader, filepath string, unmarshal Unmarshal) plugins.Plugin {
 	return &walker{
 		src:       src,
+		name:      filepath,
 		filepath:  filepath,
 		unmarshal: unmarshal,
 	}
@@ -58,6 +58,7 @@ type Config struct {
 // New returns a file plugin.
 func New(path string, unmarshal Unmarshal, config Config) plugins.Plugin {
 	plug := &walker{
+		name:      path,
 		filepath:  path,
 		unmarshal: unmarshal,
 		optional:  config.Optional,
@@ -66,8 +67,9 @@ func New(path string, unmarshal Unmarshal, config Config) plugins.Plugin {
 	return plug
 }
 
-// FilePaths returns the file paths from a list of plugins,
-// filtering out non-file plugins.
+// FilePaths returns the resolved filesystem paths from a list of
+// plugins, filtering out non-file plugins. Paths are available
+// after Walk has been called.
 func FilePaths(ps []plugins.Plugin) []string {
 	var paths []string
 	for _, p := range ps {
@@ -78,9 +80,24 @@ func FilePaths(ps []plugins.Plugin) []string {
 	return paths
 }
 
+// FileNames returns the display names of file paths from a list of
+// plugins, filtering out non-file plugins. These are the names as
+// provided by the user, not resolved absolute paths.
+func FileNames(ps []plugins.Plugin) []string {
+	var names []string
+	for _, p := range ps {
+		if w, ok := p.(*walker); ok && w.name != "" {
+			names = append(names, w.name)
+		}
+	}
+	return names
+}
+
 type walker struct {
-	filepath  string
-	src       io.Reader // only set when created via NewReader
+	name      string        // display name (as the user wrote it)
+	filepath  string        // resolved absolute path (set during Walk)
+	resolve   func() string // lazy resolver (from Path.Resolve)
+	src       io.Reader     // only set when created via NewReader
 	conf      any
 	unmarshal Unmarshal
 	optional  bool
@@ -91,8 +108,13 @@ type walker struct {
 func (w *walker) Walk(conf any) error {
 	w.conf = conf
 
+	// Lazy path resolution (e.g. Workspace, Relative).
+	if w.resolve != nil && w.filepath == "" {
+		w.filepath = w.resolve()
+	}
+
 	// Check file exists early (for non-optional files).
-	if w.src == nil {
+	if w.src == nil && w.filepath != "" {
 		_, err := os.Stat(w.filepath)
 		if err != nil {
 			if w.optional && os.IsNotExist(err) {

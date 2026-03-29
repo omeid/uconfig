@@ -37,7 +37,7 @@ func TestLoadBasic(t *testing.T) {
 	}
 
 	files := uconfig.Files{
-		{"testdata/classic.json", json.Unmarshal, true},
+		{file.Relative("testdata/classic.json"), json.Unmarshal, true},
 	}
 
 	// set some env vars to test env var and plugin orders.
@@ -97,7 +97,7 @@ func TestLoadWithSecret(t *testing.T) {
 	}
 
 	files := uconfig.Files{
-		{"testdata/classic.json", json.Unmarshal, true},
+		{file.Relative("testdata/classic.json"), json.Unmarshal, true},
 	}
 
 	SecretProvider := func(name string) (string, error) {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/omeid/uconfig"
 	"github.com/omeid/uconfig/examples/secrets/secretsource"
+	"github.com/omeid/uconfig/plugins/file"
 	"github.com/omeid/uconfig/plugins/secret"
 )
 
@@ -26,7 +27,7 @@ type Config struct {
 }
 
 var files = uconfig.Files{
-	{Path: "config.json", Unmarshal: json.Unmarshal, Optional: true},
+	{Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
 	// or short form: {"config.json", json.Unmarshal, true},
 }
 
