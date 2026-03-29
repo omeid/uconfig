@@ -327,3 +327,33 @@ Walkers are used for configuration plugins that take the whole config struct and
 Plugins that load the configuration from files are good candidates for this.
 
 See [file plugin](plugins/file/file.go) for an example.
+
+## Live Reload
+
+For live config file watching and reload, see [uconfig-watch](https://github.com/omeid/uconfig-watch). It wraps uconfig with file watching and calls your handler on every config change.
+
+## Plugins
+
+### Built-in
+
+| Plugin | Type | Description |
+|---|---|---|
+| [defaults](plugins/defaults) | Visitor | Sets default values from `default` struct tags |
+| [env](plugins/env) | Visitor | Reads environment variables |
+| [flag](plugins/flag) | Visitor | Command-line flags with `-h` / `--help` support |
+| [file](plugins/file) | Walker | Loads config from files (JSON, TOML, etc.). Re-reads on each `Parse()` |
+| [secret](plugins/secret) | Visitor | Loads secrets from external providers |
+
+### External Plugins
+
+| Package | Description |
+|---|---|
+| [uconfig-cue](https://github.com/omeid/uconfig-cue) | [CUE](https://cuelang.org) file support |
+| [uconfig-dapi](https://github.com/omeid/uconfig-dapi) | Kubernetes Downward API support |
+
+### Extensions
+
+| Package | Description |
+|---|---|
+| [uconfig-watch](https://github.com/omeid/uconfig-watch) | Live config reload via fsnotify file watching |
+| [uconfig-validator](https://github.com/omeid/uconfig-validator) | [go-playground/validator](https://github.com/go-playground/validator) integration |

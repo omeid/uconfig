@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.12.0
+
+### Changed
+- **File plugin re-reads on each Parse.** The file plugin now opens and reads the config file on every `Parse()` call instead of reading once at creation time. This makes `Parse()` idempotent and safe to call repeatedly, enabling live config reload.
+- **Flag plugin supports re-visiting.** The flag plugin resets its `FlagSet` on each `Visit` call, allowing `Parse()` to be called multiple times without panicking on flag redefinition.
+
+### Added
+- **`file.FilePaths` helper.** Returns the file paths from a list of plugins, filtering out non-file plugins. Useful for external watchers that need to know which files to monitor.
+- **File existence check in Walk.** Non-optional files are validated during `Walk()` so missing file errors are caught early.
+- **Plugins section in README.** Lists built-in plugins, external plugins, and extensions.
+
+## v0.11.0 (retracted)
+## v0.10.0 (retracted)
+
 ## v0.9.0
 
 ### Added

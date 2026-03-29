@@ -94,6 +94,12 @@ func IsCommand(f flat.Field) bool {
 func (v *visitor) Visit(fields flat.Fields) error {
 	v.fields = fields
 
+	// Reset FlagSet to allow re-visiting (e.g. config reload).
+	v.fs = flag.NewFlagSet(v.fs.Name(), v.fs.ErrorHandling())
+	v.fs.Usage = func() {}
+	v.requiredSet = map[string]bool{}
+	v.command = nil
+
 	for _, f := range v.fields {
 
 		name, explicit := f.Name(tag)

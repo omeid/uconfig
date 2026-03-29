@@ -4,6 +4,10 @@ retract v1.2.0
 
 retract v1.2.1
 
+retract v0.11.0 // incomplete release, use v0.12.0
+
+retract v0.10.0 // incomplete release, use v0.12.0
+
 go 1.21
 
 require (

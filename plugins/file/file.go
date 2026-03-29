@@ -55,53 +55,54 @@ type Config struct {
 	Optional bool
 }
 
-// New returns an EnvSet.
+// New returns a file plugin.
 func New(path string, unmarshal Unmarshal, config Config) plugins.Plugin {
 	plug := &walker{
 		filepath:  path,
 		unmarshal: unmarshal,
+		optional:  config.Optional,
 	}
-
-	src, err := os.Open(path)
-
-	if err == nil {
-		plug.src = src
-	}
-
-	if config.Optional && os.IsNotExist(err) {
-		err = nil
-	}
-
-	plug.err = err
 
 	return plug
 }
 
-type Plugin interface {
-	plugins.Plugin
-	FilePath() string
+// FilePaths returns the file paths from a list of plugins,
+// filtering out non-file plugins.
+func FilePaths(ps []plugins.Plugin) []string {
+	var paths []string
+	for _, p := range ps {
+		if w, ok := p.(*walker); ok && w.filepath != "" {
+			paths = append(paths, w.filepath)
+		}
+	}
+	return paths
 }
 
 type walker struct {
 	filepath  string
-	src       io.Reader
+	src       io.Reader // only set when created via NewReader
 	conf      any
 	unmarshal Unmarshal
+	optional  bool
 
 	err error
 }
 
-func (w *walker) FilePath() string {
-	return w.filepath
-}
-
 func (w *walker) Walk(conf any) error {
-	if w.err != nil {
-		return w.err
+	w.conf = conf
+
+	// Check file exists early (for non-optional files).
+	if w.src == nil {
+		_, err := os.Stat(w.filepath)
+		if err != nil {
+			if w.optional && os.IsNotExist(err) {
+				return nil
+			}
+			return err
+		}
 	}
 
-	w.conf = conf
-	return w.err
+	return nil
 }
 
 var ErrEncodingFailed = errors.New("failed to decode file")
@@ -111,23 +112,37 @@ func (w *walker) Parse() error {
 		return w.err
 	}
 
-	if w.src == nil {
-		return nil
+	var src io.Reader
+
+	if w.src != nil {
+		// Created via NewReader -- use the provided reader (one-shot).
+		src = w.src
+		w.src = nil // consumed
+	} else {
+		// Created via New -- open the file fresh each time.
+		f, err := os.Open(w.filepath)
+		if err != nil {
+			if w.optional && os.IsNotExist(err) {
+				return nil
+			}
+			return err
+		}
+		defer f.Close()
+		src = f
 	}
 
-	src, err := io.ReadAll(w.src)
+	data, err := io.ReadAll(src)
 	if err != nil {
 		return err
 	}
 
-	if closer, ok := w.src.(io.Closer); ok {
-		err := closer.Close()
-		if err != nil {
+	if closer, ok := src.(io.Closer); ok {
+		if err := closer.Close(); err != nil {
 			return err
 		}
 	}
 
-	err = w.unmarshal(src, w.conf)
+	err = w.unmarshal(data, w.conf)
 	if err != nil {
 		filePath := errors.New(w.filepath)
 		return errors.Join(filePath, err)
