@@ -154,7 +154,6 @@ func TestWatchNoUpdaters(t *testing.T) {
 		called = true
 		return nil
 	})
-
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
 	}
@@ -183,7 +182,6 @@ func TestWatchFnReturnsNilExits(t *testing.T) {
 	err := conf.Watch(context.Background(), func(ctx context.Context, c *simpleConfig) error {
 		return nil
 	})
-
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
 	}

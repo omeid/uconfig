@@ -11,6 +11,7 @@ import (
 	"github.com/omeid/uconfig/plugins"
 )
 
+// ErrUsage is returned when the user requests usage (e.g. -h flag).
 var ErrUsage = plugins.ErrUsage
 
 // PluginProvider is implemented by types that can provide plugins.

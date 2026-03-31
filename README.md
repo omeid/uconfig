@@ -168,7 +168,7 @@ Sometimes you might want to use a different env var, or flag name for backwards 
 
 You can change the name of a field as seen by `uconfig`.
 
-Please note that this flag only works for walker plugins (flags, env, anything flat) and for Visitor plugins (file, stream, et al) you will need to use encoder specific tags like `json:"field_name"` and so on.
+Please note that this tag only works for Visitor plugins (flags, env, anything flat) and for Walker plugins (file, stream, et al) you will need to use encoder specific tags like `json:"field_name"` and so on.
 
 
 2. Plugin specific tags

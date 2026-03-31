@@ -124,9 +124,6 @@ func TestLoadWithSecret(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	if diff := cmp.Diff(expect, value); diff != "" {
 		t.Error(diff)

@@ -190,9 +190,6 @@ func TestBadFile(t *testing.T) {
 	reader := file.NewReader(open, filepath, json.Unmarshal)
 
 	conf := uconfig.New[f.Config](reader)
-	if err != nil {
-		t.Fatal(err)
-	}
 	_, err = conf.Parse()
 
 	if err == nil {
@@ -214,9 +211,6 @@ func TestBadFileContent(t *testing.T) {
 	reader := file.NewReader(open, filepath, json.Unmarshal)
 
 	conf := uconfig.New[f.Config](reader)
-	if err != nil {
-		t.Fatal(err)
-	}
 	_, err = conf.Parse()
 
 	if err == nil {

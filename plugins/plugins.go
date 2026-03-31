@@ -1,5 +1,5 @@
 // Package plugins describes the uconfig provider interface.
-// it exists to enable uconfig.Classic without circular deps.
+// It exists to enable uconfig.Classic without circular deps.
 package plugins
 
 import (
@@ -54,7 +54,7 @@ type Updater interface {
 
 var tags = map[string]string{}
 
-// ErrUsage is returned when user has request usage message
+// ErrUsage is returned when the user has requested a usage message
 // via some plugin, mostly flags.
 var ErrUsage = errors.New("uconfig: usage request")
 

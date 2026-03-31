@@ -73,7 +73,7 @@ func (c *config[C]) Usage() {
 	err := w.Flush()
 	if err != nil {
 		// we are asked for usage which means it is interactive use
-		// and so panicing is acceptable.
+		// and so panicking is acceptable.
 		panic(err)
 	}
 }

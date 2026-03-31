@@ -141,7 +141,7 @@ func (w *walker) Parse() error {
 			}
 			return err
 		}
-		defer f.Close()
+		defer f.Close() //nolint:errcheck // read-only
 		src = f
 	}
 

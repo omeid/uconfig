@@ -15,7 +15,7 @@ func init() {
 	plugins.RegisterTag(tag)
 }
 
-// Sourcer is any function that can exchanges a secret name with it's value.
+// Sourcer is any function that can exchange a secret name for its value.
 type Sourcer func(string) (string, error)
 
 // New returns the secret provider.
