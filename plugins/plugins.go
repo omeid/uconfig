@@ -3,6 +3,7 @@
 package plugins
 
 import (
+	"context"
 	"errors"
 	"log"
 	"runtime"
@@ -29,6 +30,26 @@ type Visitor interface {
 	Plugin
 
 	Visit(flat.Fields) error
+}
+
+// Extension is the interface for plugins that need access to the full
+// plugin list. Like all plugins, Extensions are set up in registration
+// order — place them after any plugins they need to inspect (e.g. after
+// file plugins so that paths are resolved).
+type Extension interface {
+	Plugin
+
+	Extend([]Plugin) error
+}
+
+// Updater is an optional interface for plugins that can detect
+// when their backing source has changed. It is used by Watch
+// to trigger re-parsing. Any plugin type (Walker, Visitor, or
+// Extension) can additionally implement Updater.
+type Updater interface {
+	// Updated blocks until the plugin's source has changed or ctx is done.
+	// Returns true if the source changed, false otherwise.
+	Updated(ctx context.Context) bool
 }
 
 var tags = map[string]string{}

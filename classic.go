@@ -13,15 +13,17 @@ type Files = file.Files
 
 // Classic creates a uconfig manager with defaults,environment variables,
 // and flags (in that order) and optionally file loaders based on the provided
-// Files map and parses them right away.
-func Classic[C any](files Files, userPlugins ...plugins.Plugin) Config[C] {
+// PluginProvider (e.g. file.Files or watchfile.Files) and parses them right away.
+func Classic[C any](files PluginProvider, userPlugins ...plugins.Plugin) Config[C] {
 	// almost a duplicate of Load, but due to the order of things, not worth abstracting for a few lines.
-	ps := make([]plugins.Plugin, 0, len(files)+3+len(userPlugins))
+	ps := make([]plugins.Plugin, 0, 3+len(userPlugins))
 	// first defaults
 	ps = append(ps, defaults.New())
 	// then files
-	ps = append(ps, files.Plugins()...)
-	// then any user pugins, often just _secret_.
+	if files != nil {
+		ps = append(ps, files.Plugins()...)
+	}
+	// then any user plugins, often just _secret_.
 	ps = append(ps, userPlugins...)
 
 	// followed by envs

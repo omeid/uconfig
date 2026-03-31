@@ -15,7 +15,7 @@ func init() {
 	plugins.RegisterTag(tag)
 }
 
-// New returns an EnvSet.
+// New returns an env plugin.
 func New() plugins.Plugin {
 	return &visitor{}
 }

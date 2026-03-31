@@ -1,9 +1,9 @@
 # uConfig [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/omeid/uconfig) [![Build Status](https://app.travis-ci.com/omeid/uconfig.svg?branch=master)](https://app.travis-ci.com/omeid/uconfig) [![Go Report Card](https://goreportcard.com/badge/github.com/omeid/uconfig)](https://goreportcard.com/report/github.com/omeid/uconfig) [![Coverage](https://gocover.io/_badge/github.com/omeid/uconfig?update)](https://gocover.io/github.com/omeid/uconfig)
 
 
-Lightweight, zero-dependency, and extendable configuration management.
+Lightweight and extendable configuration management.
 
-uConfig is extremely light and extendable configuration management library with zero dependencies. Every aspect of configuration is provided through a _plugin_, which means you can have any combination of flags, environment variables, defaults, secret providers, Kubernetes Downward API, and any combination of configuration files and formats including json, toml, cue, or just about anything you want, and only what you want, through plugins.
+uConfig is a lightweight and extendable configuration management library. Every aspect of configuration is provided through a _plugin or extension_, which means you can have any combination of flags, environment variables, defaults, secret providers, Kubernetes Downward API, or even config file watching, and any combination of configuration files and formats including json, toml, cue, or just about anything you want, and only what you want, through plugins and extensions.
 
 
 To use uConfig, you simply define the configuration struct for your services and application, and uConfig does all the heavy-lifting. It just works.
@@ -142,7 +142,7 @@ See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package f
 
 ## File Paths
 
-Config file paths are specified using `file.Path` constructors. Paths are resolved lazily at parse time, not at declaration time, making them safe to use in `var` declarations and compatible with live reload via [uconfig-watch](https://github.com/omeid/uconfig-watch).
+Config file paths are specified using `file.Path` constructors. Paths are resolved lazily at parse time, not at declaration time, making them safe to use in `var` declarations and compatible with live reload via [uconfig-watchfiles](https://github.com/omeid/uconfig-watchfiles).
 
 | Constructor | Usage output |
 |---|---|
@@ -307,10 +307,10 @@ import (
   "testing"
 
   "github.com/omeid/uconfig"
-  "github.com/omeid/uconfig/defaults"
+  "github.com/omeid/uconfig/plugins/defaults"
 )
 
-func TestSomething(t *testing.T) error {
+func TestSomething(t *testing.T) {
 
   // It will panic on error
     conf := uconfig.Must[Conf](defaults.New())
@@ -326,7 +326,7 @@ For more details, see the [godoc](https://godoc.org/github.com/omeid/uconfig).
 ## Extending uConfig:
 
 uConfig provides a plugin mechanism for adding new sources of configuration.
-There are two kind of plugins, Walkers and Visitors.
+There are three kinds of plugins: Visitors, Walkers, and Extensions.
 
 To implement your own, see the examples.
 
@@ -345,9 +345,46 @@ Plugins that load the configuration from files are good candidates for this.
 
 See [file plugin](plugins/file/file.go) for an example.
 
+### Extensions
+
+Extensions receive the full plugin list via `Extend([]Plugin) error`. Like all plugins, they are set up in registration order -- place them after any plugins they need to inspect. For example, [uconfig-watchfiles](https://github.com/omeid/uconfig-watchfiles) must come after file plugins so that paths are resolved by the time `Extend` is called. `Classic` handles this naturally since user plugins are registered after file plugins.
+
+```go
+type Extension interface {
+    Plugin
+    Extend([]Plugin) error
+}
+```
+
+### Updater
+
+Updater is an optional interface that any plugin type (Walker, Visitor, or Extension) can additionally implement. It signals to `Watch` that the plugin's backing source has changed and the config should be re-parsed.
+
+```go
+type Updater interface {
+    Updated(ctx context.Context) bool
+}
+```
+
+`Updated` blocks until the source changes or the context is cancelled. Returns `true` if the source changed, `false` otherwise. `Watch` launches a goroutine per Updater and re-parses when any of them returns `true`.
+
+This is how [uconfig-watchfiles](https://github.com/omeid/uconfig-watchfiles) triggers reloads on file changes, but any plugin can participate. For example, a secrets plugin could implement Updater to re-parse when a secret is rotated.
+
 ## Live Reload
 
-For live config file watching and reload, see [uconfig-watch](https://github.com/omeid/uconfig-watch). It wraps uconfig with file watching and calls your handler on every config change.
+For live config file watching and reload, see [uconfig-watchfiles](https://github.com/omeid/uconfig-watchfiles). Add `watchfiles.New()` to your plugins and use `Watch` instead of `Run`:
+
+```go
+import watchfiles "github.com/omeid/uconfig-watchfiles"
+
+conf := uconfig.Classic[Config](files, watchfiles.New())
+
+conf.Watch(ctx, func(ctx context.Context, c *Config) error {
+    // called on initial parse and every file change.
+    <-ctx.Done()
+    return nil
+})
+```
 
 ## Plugins
 
@@ -372,5 +409,5 @@ For live config file watching and reload, see [uconfig-watch](https://github.com
 
 | Package | Description |
 |---|---|
-| [uconfig-watch](https://github.com/omeid/uconfig-watch) | Live config reload via fsnotify file watching |
+| [uconfig-watchfiles](https://github.com/omeid/uconfig-watchfiles) | Live config reload via fsnotify file watching |
 | [uconfig-validator](https://github.com/omeid/uconfig-validator) | [go-playground/validator](https://github.com/go-playground/validator) integration |

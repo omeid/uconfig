@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.14.0
+
+### Added
+- **`Watch` on `Config`.** Re-parses and re-invokes the callback when any `Updater` plugin signals a change. Callback returns nil to exit, error to abort, or blocks on `<-ctx.Done()` to stay alive until the next change.
+- **`Extension` plugin type.** Third category alongside Walker and Visitor; receives the full plugin list via `Extend([]Plugin) error`.
+- **`Updater` interface.** Optional interface any plugin can implement to signal source changes to `Watch`.
+- **`PluginProvider` interface.** `Classic` and `Load` now accept any type with `Plugins() []plugins.Plugin`. Existing `uconfig.Files` call sites are unaffected.
+
+### Changed
+- **`Classic` and `Load` signatures.** Accept `PluginProvider` (or `nil`) instead of the concrete `Files` type.
+
 ## v0.13.0
 
 ### Changed
@@ -49,8 +60,8 @@ While Port will be mapped to REDIS_SERVICE_PORT.
 
 ```go
 type Redis struct {
-  Host string `unconfig:".Address"`
-  Port string `unconfig:"REDIS_SERVICE_PORT"`
+  Host string `uconfig:".Address"`
+  Port string `uconfig:"REDIS_SERVICE_PORT"`
 }
 
 

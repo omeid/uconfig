@@ -78,7 +78,7 @@ func TestUsage(t *testing.T) {
 
 	if size := stdout.Len(); size != 0 {
 		t.Fatalf(
-			"Expectedd nothing in UsageOutput before usage, got len: %v\n%s",
+			"Expected nothing in UsageOutput before usage, got len: %v\n%s",
 			size,
 			stdout.String(),
 		)

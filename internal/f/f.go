@@ -7,31 +7,31 @@ import (
 	"time"
 )
 
-// Anon is part of text fixtures.
+// Anon is part of test fixtures.
 type Anon struct {
 	Version string
 }
 
-// Host is part of text fixtures.
+// Host is part of test fixtures.
 type Host struct {
 	Address string
 	Port    string
 }
 
-// RethinkConfig is part of text fixtures.
+// RethinkConfig is part of test fixtures.
 type RethinkConfig struct {
 	Host     Host
 	Db       string `default:"primary" usage:"main database used by our application"`
 	Password string `secret:""`
 }
 
-// Redis is part of text fixtures.
+// Redis is part of test fixtures.
 type Redis struct {
 	Host string `uconfig:".Address"`
 	Port int
 }
 
-// Config is part of text fixtures.
+// Config is part of test fixtures.
 type Config struct {
 	Command string `flag:",command" default:"run"` // expose this as the cli command.
 	Anon
@@ -79,13 +79,13 @@ type (
 	ElemPtrUnmarshalerSlice []*ReadableDirection
 )
 
-// ensure the interfae is implemented properly.
+// ensure the interface is implemented properly.
 var (
 	_ encoding.TextUnmarshaler = &TextUnmarshalerStringSlice{}
 	_ encoding.TextUnmarshaler = NewReadableDirection(0)
 )
 
-// Types is part of text fixtures.
+// Types is part of test fixtures.
 type Types struct {
 	String   string
 	Bool     bool

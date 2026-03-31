@@ -1,4 +1,4 @@
-// Package defaults provides flags support for uconfig
+// Package defaults provides default value support for uconfig.
 package defaults
 
 import (
@@ -12,7 +12,7 @@ func init() {
 	plugins.RegisterTag(tag)
 }
 
-// New returns an EnvSet.
+// New returns a defaults plugin.
 func New() plugins.Plugin {
 	return &visitor{}
 }

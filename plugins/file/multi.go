@@ -13,7 +13,7 @@ type UnmarshalOptions map[string]Unmarshal
 
 var ErrFileExtNotSupported = errors.New("file extension not supported")
 
-// NewMutli returns a multi unmarshal plugin that can decode the file from path
+// NewMulti returns a multi unmarshal plugin that can decode the file from path
 // using various Unmarshal functions provided in unmarshal map.
 // This is usually used as a second stage to load configurations based on a flag
 // or configuration value.

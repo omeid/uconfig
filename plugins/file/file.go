@@ -101,8 +101,6 @@ type walker struct {
 	conf      any
 	unmarshal Unmarshal
 	optional  bool
-
-	err error
 }
 
 func (w *walker) Walk(conf any) error {
@@ -127,13 +125,7 @@ func (w *walker) Walk(conf any) error {
 	return nil
 }
 
-var ErrEncodingFailed = errors.New("failed to decode file")
-
 func (w *walker) Parse() error {
-	if w.err != nil {
-		return w.err
-	}
-
 	var src io.Reader
 
 	if w.src != nil {
