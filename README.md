@@ -36,52 +36,54 @@ type Config struct {
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
+    "encoding/json"
+    "fmt"
+    "os"
 
-	"github.com/omeid/uconfig"
-	"github.com/omeid/uconfig/plugins/file"
+    "github.com/omeid/uconfig"
+    "github.com/omeid/uconfig/plugins/file"
 
-	"github.com/omeid/uconfig/examples/sample/database"
-	"github.com/omeid/uconfig/examples/sample/redis"
+    "github.com/omeid/uconfig/examples/sample/database"
+    "github.com/omeid/uconfig/examples/sample/redis"
 )
 
 
 // Config is our application config.
 type Config struct {
-	// yes you can have slices.
-	Hosts []string `default:"localhost,localhost.local" usage:"the ip or domains to bind to"`
+  // yes you can have slices.
+  Hosts []string `default:"localhost,localhost.local" usage:"the ip or domains to bind to"`
+  
+  // and maps too.
+  RegionTimeouts map[string]time.Duration `default:"us:500ms,eu:1s,ap:1200ms" usage:"per-region request timeouts"`
+  
+  Redis    redis.Config
+  Database database.Config
 
-	// and maps too.
-	RegionTimeouts map[string]time.Duration `default:"us:500ms,eu:1s,ap:1200ms" usage:"per-region request timeouts"`
-
-	Redis    redis.Config
-	Database database.Config
-
-	// the flags plugin allows capturing a single Command after the flags.
-	// so you can run myprogram -flag=value -s -blah=bleh stop|start|stop and so on.
-	Mode string `default:"start" flag:",command" usage:"run|start|stop"`
+  // The Flags plugin allows capturing a single Command after the flags.
+  // so you can run myprogram -flag=value -s -blah=bleh stop|start|stop and so on.
+  // The flags plugin will validate the command only if the usage tag matches a list of alphanum word seperated by `|` (eg. start|stop|status).
+  // Include `*` as an option (eg. "start|stop|*") to allow any command (wildcard mode).
+  Mode string `default:"start" flag:",command" usage:"run|start|stop"`
 }
 
 var files = uconfig.Files{
-	{Path: file.Workspace(".demo-app/config.json"), Unmarshal: json.Unmarshal, Optional: true},
-	{Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
+    {Path: file.Workspace(".demo-app/config.json"), Unmarshal: json.Unmarshal, Optional: true},
+    {Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
 }
 
 var conf = uconfig.Classic[Config](files)
 
 func main() {
-	conf := conf.Run()
-	// use conf as you please.
-	// let's pretty print it as JSON for example:
-	configAsJson, err := json.MarshalIndent(conf, "", " ")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+    conf := conf.Run()
+    // use conf as you please.
+    // let's pretty print it as JSON for example:
+    configAsJson, err := json.MarshalIndent(conf, "", " ")
+    if err != nil {
+        fmt.Println(err)
+        os.Exit(1)
+    }
 
-	fmt.Print(string(configAsJson))
+    fmt.Print(string(configAsJson))
 }
 ```
 
@@ -154,9 +156,9 @@ The name passed to each constructor is shown in the `-h` usage output as-is, reg
 
 ```go
 var files = uconfig.Files{
-	{Path: file.Workspace(".myapp/config.json"), Unmarshal: json.Unmarshal, Optional: true},
-	{Path: file.Absolute("/etc/myapp/config.json"), Unmarshal: json.Unmarshal, Optional: true},
-	{Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
+    {Path: file.Workspace(".myapp/config.json"), Unmarshal: json.Unmarshal, Optional: true},
+    {Path: file.Absolute("/etc/myapp/config.json"), Unmarshal: json.Unmarshal, Optional: true},
+    {Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
 }
 ```
 
@@ -397,6 +399,17 @@ conf.Watch(ctx, func(ctx context.Context, c *Config) error {
 | [flag](plugins/flag) | Visitor | Command-line flags with `-h` / `--help` support |
 | [file](plugins/file) | Walker | Loads config from files (JSON, TOML, etc.) with lazy path resolution via `file.Absolute`, `file.Relative`, and `file.Workspace` |
 | [secret](plugins/secret) | Visitor | Loads secrets from external providers |
+
+### Plugin Ordering
+
+Plugins are applied in the order they are registered. With the exception of defaults which is applied first in order to ensure correct semantics.
+
+```go
+conf := uconfig.New[Config](flags, env, defaults.New())
+// Order: defaults -> env -> flags
+// Defaults are applied first, then env, then flags (flags override env which override defaults)
+```
+
 
 ### External Plugins
 

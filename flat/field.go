@@ -20,14 +20,14 @@ type field struct {
 	field reflect.Value
 }
 
-func (f *field) getName(tag string) (string, bool) {
+func (f *field) Name(tag string) (string, bool) {
 	name, explicit := f.Tag(tag)
 
 	name, _, _ = strings.Cut(name, ",")
 
 	if name == "" || name == "." {
 		name = f.name
-		// explicit here means what it is an explicit name or should
+		// explicit here means that it is an explicit name or should
 		// be prefixed.
 		explicit = false
 	}
@@ -35,12 +35,6 @@ func (f *field) getName(tag string) (string, bool) {
 	if name[0] == '.' {
 		name = name[1:]
 	}
-
-	return name, explicit
-}
-
-func (f *field) Name(tag string) (string, bool) {
-	name, explicit := f.getName(tag)
 
 	if f.prefix == "" || explicit {
 		return name, explicit
@@ -74,7 +68,7 @@ func (f *field) Ptr() any {
 	return f.field.Addr().Interface()
 }
 
-var textUnmarshalerType = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()
+var textUnmarshalerType = reflect.TypeFor[encoding.TextUnmarshaler]()
 
 func (f *field) Set(value string) error {
 	t := f.field.Type()

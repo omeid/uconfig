@@ -8,7 +8,7 @@ retract v0.11.0 // incomplete release, use v0.12.0
 
 retract v0.10.0 // incomplete release, use v0.12.0
 
-go 1.21
+go 1.22
 
 require (
 	github.com/google/go-cmp v0.5.8

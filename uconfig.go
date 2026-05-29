@@ -9,6 +9,7 @@ import (
 
 	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/plugins"
+	"github.com/omeid/uconfig/plugins/defaults"
 )
 
 // ErrUsage is returned when the user requests usage (e.g. -h flag).
@@ -56,7 +57,7 @@ func New[C any](ps ...plugins.Plugin) Config[C] {
 		err:     err,
 		conf:    conf,
 		fields:  fields,
-		plugins: ps,
+		plugins: defaults.SortDefaultsFirst(ps),
 	}
 }
 

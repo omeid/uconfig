@@ -1,6 +1,7 @@
 package flag_test
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -336,5 +337,268 @@ func TestFlagExtraArgs(t *testing.T) {
 
 	if err.Error() != expect {
 		t.Errorf("expected (%s) but got (%s)", expect, err)
+	}
+}
+
+type fCliCommandOptions struct {
+	Mode string `flag:",command" usage:"run|start|stop"`
+}
+
+func TestFlagTagCommandOptions(t *testing.T) {
+	args := []string{"run"}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptions](fs)
+
+	value, err := conf.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expect := &fCliCommandOptions{Mode: "run"}
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+}
+
+func TestFlagTagCommandOptionsValid(t *testing.T) {
+	for _, cmd := range []string{"run", "start", "stop"} {
+		t.Run(cmd, func(t *testing.T) {
+			args := []string{cmd}
+
+			fs := flag.New("testing", flag.PanicOnError, args)
+
+			conf := uconfig.New[fCliCommandOptions](fs)
+
+			value, err := conf.Parse()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expect := &fCliCommandOptions{Mode: cmd}
+			if diff := cmp.Diff(expect, value); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestFlagTagCommandOptionsInvalid(t *testing.T) {
+	args := []string{"invalid"}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptions](fs)
+
+	_, err := conf.Parse()
+	if err == nil {
+		t.Fatal("Expected error for invalid command but got nil")
+	}
+
+	expect := "unknown command: invalid expecting one of run|start|stop"
+	if err.Error() != expect {
+		t.Errorf("expected (%s) but got (%s)", expect, err)
+	}
+}
+
+type fCliCommandOptionsWildcard struct {
+	Mode string `flag:",command" usage:"run|*|start"`
+}
+
+func TestFlagTagCommandOptionsWildcard(t *testing.T) {
+	for _, cmd := range []string{"run", "start", "stop", "custom", ""} {
+		t.Run(cmd, func(t *testing.T) {
+			args := []string{cmd}
+
+			fs := flag.New("testing", flag.PanicOnError, args)
+
+			conf := uconfig.New[fCliCommandOptionsWildcard](fs)
+
+			value, err := conf.Parse()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expect := &fCliCommandOptionsWildcard{Mode: cmd}
+			if diff := cmp.Diff(expect, value); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+type fCliCommandOptionsWithPipeInUsage struct {
+	Mode string `flag:",command" usage:"the command to run: run|start|stop"`
+}
+
+func TestFlagTagCommandOptionsWithPipeInUsage(t *testing.T) {
+	// Usage with pipe that doesn't match pattern should NOT be treated as options
+	args := []string{"custom"}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptionsWithPipeInUsage](fs)
+
+	value, err := conf.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expect := &fCliCommandOptionsWithPipeInUsage{Mode: "custom"}
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+}
+
+type fCliCommandOptionsDefaultMatching struct {
+	Mode string `flag:",command" usage:"run|start|stop" default:"run"`
+}
+
+func TestFlagTagCommandOptionsDefaultMatching(t *testing.T) {
+	// Default matches one of the usage options
+	args := []string{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptionsDefaultMatching](defaults.New(), fs)
+
+	value, err := conf.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expect := &fCliCommandOptionsDefaultMatching{Mode: "run"}
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+}
+
+func TestFlagTagCommandOptionsDefaultMatchingOverride(t *testing.T) {
+	// Default matches one of the usage options, but should be overridden
+	args := []string{"start"}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptionsDefaultMatching](defaults.New(), fs)
+
+	value, err := conf.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expect := &fCliCommandOptionsDefaultMatching{Mode: "start"}
+	if diff := cmp.Diff(expect, value); diff != "" {
+		t.Error(diff)
+	}
+}
+
+type fCliCommandOptionsDefaultNonMatching struct {
+	Mode string `flag:",command" usage:"run|start|stop" default:"invalid"`
+}
+
+func TestFlagTagCommandOptionsDefaultNonMatching(t *testing.T) {
+	// Default doesn't match usage options - should error on Visit!
+	args := []string{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptionsDefaultNonMatching](defaults.New(), fs)
+
+	c, err := conf.Parse()
+	if err == nil {
+		t.Fatalf("Expected error for non-matching default but got nil for Mode=%s", c.Mode)
+	}
+
+	expect := "unknown command: invalid expecting one of run|start|stop"
+	if err.Error() != expect {
+		t.Errorf("expected (%s) but got (%s)", expect, err)
+	}
+}
+
+func TestFlagTagCommandOptionsDefaultNonMatchingPoorOrder(t *testing.T) {
+	// Default doesn't match usage options - should error on Visit!
+	args := []string{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptionsDefaultNonMatching](fs, defaults.New())
+
+	c, err := conf.Parse()
+	if err == nil {
+		t.Fatalf("Expected error for non-matching default but got nil for Mode=%s", c.Mode)
+	}
+
+	expect := "unknown command: invalid expecting one of run|start|stop"
+	if err.Error() != expect {
+		t.Errorf("expected (%s) but got (%s)", expect, err)
+	}
+}
+
+type fCliCommandOptionsNoDefaultNoMatching struct {
+	Mode string `flag:",command" usage:"run|start|stop"`
+}
+
+func TestFlagTagCommandOptionsDefaultNoMatching(t *testing.T) {
+	// Default doesn't match usage options - should error on Visit!
+	args := []string{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptionsNoDefaultNoMatching](defaults.New(), fs)
+
+	c, err := conf.Parse()
+	if err == nil {
+		t.Fatalf("Expected error for non-matching default but got nil for Mode=%s", c.Mode)
+	}
+
+	expect := "unknown command: [blank] expecting one of run|start|stop"
+	if err.Error() != expect {
+		t.Errorf("expected (%s) but got (%s)", expect, err)
+	}
+}
+
+type fCliCommandOptionsInt struct {
+	Count int `flag:",command" usage:"any number"`
+}
+
+func TestFlagTagCommandOptionsIntAnyUsage(t *testing.T) {
+	// Default doesn't match usage options - should error on Visit!
+	expect := 24
+	args := []string{strconv.Itoa(expect)}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptionsInt](defaults.New(), fs)
+
+	c, err := conf.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if c.Count != expect {
+		t.Errorf("expected (%d) but got (%d)", expect, c.Count)
+	}
+}
+
+type fCliCommandOptionsIntUnsupportedUsage struct {
+	Count int `flag:",command" default:"42" usage:"10|20|30"`
+}
+
+func TestFlagTagCommandOptionsIntDefaultMatch(t *testing.T) {
+	args := []string{}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptionsIntUnsupportedUsage](defaults.New(), fs)
+
+	expectErr := "command only supports usage based validation for type string"
+	_, err := conf.Parse()
+	if err == nil {
+		t.Fatalf("expected (%s) but nil", expectErr)
+	}
+
+	if err.Error() != expectErr {
+		t.Errorf("expected (%s) but got (%s)", expectErr, err.Error())
 	}
 }

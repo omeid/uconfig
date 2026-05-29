@@ -3,6 +3,7 @@ package uconfig_test
 import (
 	"context"
 	"errors"
+	"os"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -11,6 +12,9 @@ import (
 	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/internal/f"
 	"github.com/omeid/uconfig/plugins"
+	"github.com/omeid/uconfig/plugins/defaults"
+	"github.com/omeid/uconfig/plugins/env"
+	"github.com/omeid/uconfig/plugins/flag"
 )
 
 type BadPlugin interface {
@@ -339,5 +343,71 @@ func TestWatchFnBlocksUntilChange(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("Watch didn't exit after fn returned nil")
+	}
+}
+
+type fCliCommandOptionWithDefault struct {
+	Mode string `flag:",command" usage:"zero|one" default:"zero"`
+}
+
+func TestNewDefaultsOrder(t *testing.T) {
+	args := []string{"one"}
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fCliCommandOptionWithDefault](fs, defaults.New())
+
+	c, err := conf.Parse()
+	if err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
+
+	if c.Mode == "zero" {
+		t.Errorf("expected Mode == one but got zero. Flags Override Defaults")
+	}
+
+	if c.Mode != "one" {
+		t.Errorf("expected Mode == one but got %s", c.Mode)
+	}
+}
+
+type fMultiPluginConfig struct {
+	Mode    string `flag:",command" usage:"zero|one|two" default:"zero"`
+	Enabled bool   `env:"ENABLED" usage:"enabled" default:"false"`
+	Port    int    `usage:"port" default:"8080"`
+	Timeout int    `usage:"timeout" default:"30"`
+}
+
+func TestNewMultiplePluginsDefaultsOrder(t *testing.T) {
+	args := []string{"two"}
+	os.Setenv("ENABLED", "true")
+	defer os.Unsetenv("ENABLED")
+
+	fs := flag.New("testing", flag.PanicOnError, args)
+
+	conf := uconfig.New[fMultiPluginConfig](fs, env.New(), defaults.New())
+
+	c, err := conf.Parse()
+	if err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
+
+	// Flags should override defaults (flags applied last)
+	if c.Mode != "two" {
+		t.Errorf("expected Mode == two but got %s", c.Mode)
+	}
+
+	// Env should override defaults (env applied after defaults)
+	if !c.Enabled {
+		t.Errorf("expected Enabled == true but got false")
+	}
+
+	// Defaults applied first for fields without flags/env
+	if c.Port != 8080 {
+		t.Errorf("expected Port == 8080 but got %d", c.Port)
+	}
+
+	if c.Timeout != 30 {
+		t.Errorf("expected Timeout == 30 but got %d", c.Timeout)
 	}
 }

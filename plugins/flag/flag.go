@@ -199,6 +199,27 @@ func (v *visitor) Parse() error {
 			v.requiredSet[commandFieldName] = true
 		}
 
+		// Check usage tag for command options pattern
+		if opts, ok := v.command.Tag("usage"); ok {
+
+			options, ok := matchesCommandOptionsPattern(opts)
+
+			if !ok {
+				return nil
+			}
+
+			value, ok := v.command.Interface().(string)
+
+			if !ok {
+				// TODO: Consider supporting number types?
+				return fmt.Errorf("command only supports usage based validation for type string")
+			}
+
+			if err := validateCommand(options, value); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
@@ -240,4 +261,56 @@ func (v *visitor) Parse() error {
 	}
 
 	return nil
+}
+
+func validateCommand[V []string](options V, cmd string) error {
+	// Check if usage matches the pattern: printable chars (excluding dash and space) separated by |
+	// Pattern: one or more printable chars (excluding dash), optionally followed by | and more chars
+
+	// Check if wildcard is in options
+	if slices.Contains(options, "*") {
+		return nil
+	}
+
+	// Empty command is only allowed with wildcard
+	if cmd == "" {
+		return fmt.Errorf("unknown command: [blank] expecting one of %s", strings.Join(options, "|"))
+	}
+
+	// Split options by |
+	if slices.Contains(options, cmd) {
+		return nil
+	}
+
+	return fmt.Errorf("unknown command: %s expecting one of %s", cmd, strings.Join(options, "|"))
+}
+
+func matchesCommandOptionsPattern(opts string) ([]string, bool) {
+	// Pattern: printable chars (excluding dash and space) separated by |
+	// Each option must be at least 1 char
+	if opts == "" {
+		return nil, false
+	}
+
+	// Split by |
+	parts := strings.Split(opts, "|")
+	if len(parts) == 0 {
+		return nil, false
+	}
+
+	for _, part := range parts {
+		// Each part must be at least 1 character
+		if len(part) == 0 {
+			return nil, false
+		}
+		// Each part must only contain printable ASCII chars (excluding dash and space)
+		// Valid range: '!' (33) to '~' (126)
+		for _, ch := range part {
+			if ch < '!' || ch > '~' {
+				return nil, false
+			}
+		}
+	}
+
+	return strings.Split(opts, "|"), true
 }

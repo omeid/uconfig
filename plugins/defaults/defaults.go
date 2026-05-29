@@ -2,6 +2,8 @@
 package defaults
 
 import (
+	"slices"
+
 	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/plugins"
 )
@@ -47,4 +49,29 @@ func (v *visitor) Parse() error {
 	}
 
 	return nil
+}
+
+func SortDefaultsFirst(ps []plugins.Plugin) []plugins.Plugin {
+	if len(ps) < 2 {
+		return ps
+	}
+
+	idx := -1
+	for i, p := range ps {
+		if _, ok := p.(*visitor); ok {
+			idx = i
+			break
+		}
+	}
+
+	if idx < 1 {
+		// no defaults or already at zero (eg. Classic).
+		return ps
+	}
+
+	return slices.Concat(
+		ps[idx:idx+1],
+		ps[:idx],
+		ps[idx+1:],
+	)
 }

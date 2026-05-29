@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.15.0
+### Added
+- **Command Validation:** The flags plugin now validates commands if usage tag provides a `|` seperated option list.
+
+### Changed
+- **Plugins Order:** Defaults plugin is now always applied first to ensure correct semantics.
+
 ## v0.14.0
 
 ### Added
