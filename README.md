@@ -288,11 +288,12 @@ var secrets = secret.New(func(name string) (string, error) {
     return value, nil
 })
 
+// then you can use the secretPlugin with uConfig like any other plugin.
+// Lucky, uconfig.Classic allows passing more plugins, which means
+// you can simply do the following for flags, envs, files, and secrets!
+var conf = uconfig.Classic[Config](nil, secrets)
 func main() {
-    // then you can use the secretPlugin with uConfig like any other plugin.
-    // Lucky, uconfig.Classic allows passing more plugins, which means
-    // you can simply do the following for flags, envs, files, and secrets!
-    conf := uconfig.Classic[Config](nil, secrets).Run()
+    conf := conf.Run()
 
     fmt.Printf("we got an API Key: %s\n", conf.Creds.APIKey)
 }
@@ -406,7 +407,7 @@ Plugins are applied in the order they are registered. With the exception of defa
 
 ```go
 conf := uconfig.New[Config](flags, env, defaults.New())
-// Order: defaults -> env -> flags
+// Order: defaults -> flags -> env 
 // Defaults are applied first, then env, then flags (flags override env which override defaults)
 ```
 
