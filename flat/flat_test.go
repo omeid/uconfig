@@ -27,6 +27,7 @@ func TestFlattenNested(t *testing.T) {
 		"Rethink.Host.Port":    false,
 		"Rethink.Db":           false,
 		"Rethink.Password":     false,
+		"Webhooks":             false,
 	}
 
 	for _, fs := range fs {

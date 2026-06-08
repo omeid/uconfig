@@ -74,12 +74,26 @@ func (c *config[C]) Parse() (*C, error) {
 		return nil, c.err
 	}
 
+	// split fields into standard (basic) fields.
+	var basicFields flat.Fields
+	for _, f := range c.fields {
+		if !f.Folded() {
+			basicFields = append(basicFields, f)
+		}
+	}
+
 	// first setup plugins.
 	for _, plug := range c.plugins {
 		switch plug := plug.(type) {
 
+		case plugins.FoldVisitor:
+			err := plug.VisitFolds(c.fields)
+			if err != nil {
+				return nil, err
+			}
+
 		case plugins.Visitor:
-			err := plug.Visit(c.fields)
+			err := plug.Visit(basicFields)
 			if err != nil {
 				return nil, err
 			}

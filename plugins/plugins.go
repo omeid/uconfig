@@ -32,6 +32,14 @@ type Visitor interface {
 	Visit(flat.Fields) error
 }
 
+// FoldVisitor is the interface for providers that require a flat view
+// of ALL config fields, including folded fields (like map/slice of structs).
+type FoldVisitor interface {
+	Plugin
+
+	VisitFolds(flat.Fields) error
+}
+
 // Extension is the interface for plugins that need access to the full
 // plugin list. Like all plugins, Extensions are set up in registration
 // order — place them after any plugins they need to inspect (e.g. after
@@ -50,6 +58,27 @@ type Updater interface {
 	// Updated blocks until the plugin's source has changed or ctx is done.
 	// Returns true if the source changed, false otherwise.
 	Updated(ctx context.Context) bool
+}
+
+// SourcePath describes a configuration source's display name and its
+// actual filesystem path.
+type SourcePath struct {
+	Name string
+	Path string
+}
+
+// SourcePaths is an optional interface for plugins that load from the
+// filesystem. It returns a list of source paths used by the plugin,
+// containing both their display names and resolved absolute paths.
+type SourcePaths interface {
+	SourcePaths() []SourcePath
+}
+
+// Usage is an optional interface for plugins to provide custom usage
+// documentation. These snippets are grouped by header and appended
+// to the end of the uconfig usage output.
+type Usage interface {
+	Usage(fieldname string) (string, string)
 }
 
 var tags = map[string]string{}

@@ -15,14 +15,14 @@ type Path struct {
 
 // Absolute returns a Path for a fixed absolute path.
 func Absolute(path string) Path {
-	return Path{Name: "absolute:  " + path, Resolve: func() string { return path }}
+	return Path{Name: path, Resolve: func() string { return path }}
 }
 
 // Relative returns a Path that resolves a relative path against
 // the working directory at the time of the call.
 func Relative(path string) Path {
 	return Path{
-		Name: "relative:  " + path,
+		Name: path,
 		Resolve: func() string {
 			abs, err := filepath.Abs(path)
 			if err != nil {
@@ -44,7 +44,7 @@ func Relative(path string) Path {
 // tools like git (.git), eslint (.eslintrc), and similar.
 func Workspace(name string) Path {
 	return Path{
-		Name: "workspace: " + name,
+		Name: name,
 		Resolve: func() string {
 			dir, err := filepath.Abs(".")
 			if err != nil {

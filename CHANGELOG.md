@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.16.0
+### Added
+- **Folded Fields:** Add support for complex structural configuration by supporting slices and maps of structs via a new `FoldVisitor` plugin interface.
+- **`fileset` Plugin:** A new plugin that loads a collection of files matching a pattern into a slice or map with entries for each file.
+- **Rich Usage Output:** The CLI usage screen (`-h`) now deeply inspects and recursively prints `FOLDED FIELDS` structures. It also natively delegates to plugins for customized documentation via the `plugins.Usage` interface.
+
+### Breaking Changes
+- **`file.FilePaths` and `file.FileNames` Removed:** These slice-extraction helpers have been removed from the `file` plugin. They are superseded by the new `plugins.SourcePaths` interface, which provides a generalized way for plugins to expose their backing files (both display names and resolved absolute paths) to watchers and usage screens.
+
 ## v0.15.0
 ### Added
 - **Command Validation:** The flags plugin now validates commands if usage tag provides a `|` seperated option list.

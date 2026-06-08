@@ -31,13 +31,20 @@ type Redis struct {
 	Port int
 }
 
+// Webhook is part of test fixtures to test folded fields.
+type Webhook struct {
+	URL    string   `usage:"destination url"`
+	Events []string `usage:"list of events to subscribe to"`
+}
+
 // Config is part of test fixtures.
 type Config struct {
 	Command string `flag:",command" default:"run"` // expose this as the cli command.
 	Anon
-	GoHard  bool
-	Redis   Redis
-	Rethink RethinkConfig
+	GoHard   bool
+	Redis    Redis
+	Rethink  RethinkConfig
+	Webhooks []Webhook `fileset:"webhooks"`
 }
 
 // TextUnmarshalerStringSlice is an example of encoding.TextUnmarshaler

@@ -32,6 +32,28 @@ type Field interface {
 	// returns the Ptr to this value.
 	// It is used by complex decoders like uconfig-cue.
 	Ptr() any
+
+	// Append adds a new entry to the field's collection.
+	// It allocates a new zero value of the element type, calls fn
+	// with a pointer to it for population (e.g. via unmarshal), and
+	// then inserts the result into the collection.
+	// For map fields, key is used as the map key.
+	// For slice fields, key is ignored and the value is appended.
+	// Returns an error if the field is not a collection type or if
+	// fn returns an error.
+	Append(key string, fn func(any) error) error
+
+	// Delete removes an entry from the field's collection.
+	// For map fields, key is the map key to remove.
+	// For slice fields, key is the index to remove (parsed as an integer).
+	// Returns an error if the field is not a collection type or if
+	// the index is invalid.
+	Delete(key string) error
+
+	// Folded returns true if the field is a collection (map or slice)
+	// whose elements cannot be parsed from a single string.
+	// Such fields can only be populated via Append.
+	Folded() bool
 }
 
 var caser = cases.Title(language.Und, cases.NoLower)

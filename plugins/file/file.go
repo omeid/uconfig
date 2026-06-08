@@ -67,30 +67,20 @@ func New(path string, unmarshal Unmarshal, config Config) plugins.Plugin {
 	return plug
 }
 
-// FilePaths returns the resolved filesystem paths from a list of
-// plugins, filtering out non-file plugins. Paths are available
-// after Walk has been called.
-func FilePaths(ps []plugins.Plugin) []string {
-	var paths []string
-	for _, p := range ps {
-		if w, ok := p.(*walker); ok && w.filepath != "" {
-			paths = append(paths, w.filepath)
-		}
+// SourcePaths implements plugins.SourcePaths.
+func (w *walker) SourcePaths() []plugins.SourcePath {
+	if w.filepath != "" {
+		return []plugins.SourcePath{{Name: w.name, Path: w.filepath}}
 	}
-	return paths
+	return nil
 }
 
-// FileNames returns the display names of file paths from a list of
-// plugins, filtering out non-file plugins. These are the names as
-// provided by the user, not resolved absolute paths.
-func FileNames(ps []plugins.Plugin) []string {
-	var names []string
-	for _, p := range ps {
-		if w, ok := p.(*walker); ok && w.name != "" {
-			names = append(names, w.name)
-		}
+// Usage implements plugins.Usage.
+func (w *walker) Usage(fieldname string) (string, string) {
+	if fieldname == "." {
+		return "Files", w.name + "\n"
 	}
-	return names
+	return "", ""
 }
 
 type walker struct {
@@ -127,10 +117,14 @@ func (w *walker) Walk(conf any) error {
 
 func (w *walker) Parse() error {
 	var src io.Reader
+	var closeSrc io.Closer
 
 	if w.src != nil {
 		// Created via NewReader -- use the provided reader (one-shot).
 		src = w.src
+		if c, ok := src.(io.Closer); ok {
+			closeSrc = c
+		}
 		w.src = nil // consumed
 	} else {
 		// Created via New -- open the file fresh each time.
@@ -150,8 +144,8 @@ func (w *walker) Parse() error {
 		return err
 	}
 
-	if closer, ok := src.(io.Closer); ok {
-		if err := closer.Close(); err != nil {
+	if closeSrc != nil {
+		if err := closeSrc.Close(); err != nil {
 			return err
 		}
 	}

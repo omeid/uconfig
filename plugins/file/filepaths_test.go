@@ -12,13 +12,25 @@ import (
 	"github.com/omeid/uconfig/plugins/file"
 )
 
-func TestFilePathsFromFilePlugins(t *testing.T) {
+func getSourcePaths(ps []plugins.Plugin) []string {
+	var paths []string
+	for _, p := range ps {
+		if sp, ok := p.(plugins.SourcePaths); ok {
+			for _, src := range sp.SourcePaths() {
+				paths = append(paths, src.Path)
+			}
+		}
+	}
+	return paths
+}
+
+func TestSourcePathsFromFilePlugins(t *testing.T) {
 	ps := []plugins.Plugin{
 		file.New("config.json", json.Unmarshal, file.Config{Optional: true}),
 		file.New("/etc/app/config.json", json.Unmarshal, file.Config{Optional: true}),
 	}
 
-	paths := file.FilePaths(ps)
+	paths := getSourcePaths(ps)
 	if len(paths) != 2 {
 		t.Fatalf("expected 2 paths, got %d", len(paths))
 	}
@@ -30,25 +42,25 @@ func TestFilePathsFromFilePlugins(t *testing.T) {
 	}
 }
 
-func TestFilePathsIgnoresNonFilePlugins(t *testing.T) {
+func TestSourcePathsIgnoresNonFilePlugins(t *testing.T) {
 	ps := []plugins.Plugin{
 		defaults.New(),
 		file.New("config.json", json.Unmarshal, file.Config{Optional: true}),
 	}
 
-	paths := file.FilePaths(ps)
+	paths := getSourcePaths(ps)
 	if len(paths) != 1 {
 		t.Fatalf("expected 1 path, got %d: %v", len(paths), paths)
 	}
 }
 
-func TestFilePathsEmpty(t *testing.T) {
-	paths := file.FilePaths(nil)
+func TestSourcePathsEmpty(t *testing.T) {
+	paths := getSourcePaths(nil)
 	if len(paths) != 0 {
 		t.Fatalf("expected 0 paths, got %d", len(paths))
 	}
 
-	paths = file.FilePaths([]plugins.Plugin{defaults.New()})
+	paths = getSourcePaths([]plugins.Plugin{defaults.New()})
 	if len(paths) != 0 {
 		t.Fatalf("expected 0 paths for non-file plugins, got %d", len(paths))
 	}

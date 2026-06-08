@@ -2,6 +2,7 @@ package flat
 
 import (
 	"encoding"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -58,6 +59,14 @@ func (f *field) Interface() any {
 	return f.field.Interface()
 }
 
+func (f *field) Folded() bool {
+	t := f.field.Type()
+	if t.Kind() == reflect.Slice || t.Kind() == reflect.Map {
+		return typeSetter(t.Elem()) == nil
+	}
+	return typeSetter(t) == nil
+}
+
 func (f *field) Ptr() any {
 	kind := f.field.Kind()
 
@@ -66,6 +75,78 @@ func (f *field) Ptr() any {
 	}
 
 	return f.field.Addr().Interface()
+}
+
+func (f *field) Append(key string, fn func(any) error) error {
+	t := f.field.Type()
+
+	switch t.Kind() {
+	case reflect.Slice:
+		ptr := reflect.New(t.Elem())
+		if err := fn(ptr.Interface()); err != nil {
+			return err
+		}
+		f.field.Set(reflect.Append(f.field, ptr.Elem()))
+		return nil
+
+	case reflect.Map:
+		if t.Key().Kind() != reflect.String {
+			return fmt.Errorf("map key must be string, got %v", t.Key().Kind())
+		}
+		if f.field.IsNil() {
+			f.field.Set(reflect.MakeMap(t))
+		}
+		ptr := reflect.New(t.Elem())
+		if err := fn(ptr.Interface()); err != nil {
+			return err
+		}
+		f.field.SetMapIndex(reflect.ValueOf(key), ptr.Elem())
+		return nil
+
+	default:
+		return fmt.Errorf("field is not a slice or map, got %v", t.Kind())
+	}
+}
+
+func (f *field) Delete(key string) error {
+	t := f.field.Type()
+
+	switch t.Kind() {
+	case reflect.Slice:
+		if key == "" {
+			return fmt.Errorf("slice key cannot be empty")
+		}
+		for _, c := range key {
+			if c < '0' || c > '9' {
+				return fmt.Errorf("slice key must be a positive integer, got %q", key)
+			}
+		}
+
+		idx, err := strconv.Atoi(key)
+		if err != nil {
+			return fmt.Errorf("slice key must be an integer, got %q: %v", key, err)
+		}
+		if idx < 0 || idx >= f.field.Len() {
+			return fmt.Errorf("slice index out of bounds: %d", idx)
+		}
+		// Remove the element at idx
+		newSlice := reflect.AppendSlice(f.field.Slice(0, idx), f.field.Slice(idx+1, f.field.Len()))
+		f.field.Set(newSlice)
+		return nil
+
+	case reflect.Map:
+		if t.Key().Kind() != reflect.String {
+			return fmt.Errorf("map key must be string, got %v", t.Key().Kind())
+		}
+		if !f.field.IsNil() {
+			// A zero reflect.Value deletes the key from the map.
+			f.field.SetMapIndex(reflect.ValueOf(key), reflect.Value{})
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("field is not a slice or map, got %v", t.Kind())
+	}
 }
 
 var textUnmarshalerType = reflect.TypeFor[encoding.TextUnmarshaler]()
@@ -247,6 +328,9 @@ func typeSetter(elem reflect.Type) func(reflect.Value, string) error {
 	case reflect.String:
 		return typeSetterString
 
+	case reflect.Bool:
+		return typeSetterBool
+
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if elem.String() == "time.Duration" {
 			return typeSetterDuration
@@ -294,6 +378,15 @@ func typeSetterPtrUnmarshale(f reflect.Value, value string) error {
 
 func typeSetterString(f reflect.Value, value string) error {
 	f.SetString(value)
+	return nil
+}
+
+func typeSetterBool(f reflect.Value, value string) error {
+	v, err := strconv.ParseBool(value)
+	if err != nil {
+		return err
+	}
+	f.SetBool(v)
 	return nil
 }
 

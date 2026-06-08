@@ -103,8 +103,8 @@ func TestWorkspaceIsLazy(t *testing.T) {
 
 func TestWorkspaceDisplayName(t *testing.T) {
 	p := file.Workspace(".myapp/config")
-	if p.Name != "workspace: .myapp/config" {
-		t.Fatalf("expected name %q, got %q", "workspace: .myapp/config", p.Name)
+	if p.Name != ".myapp/config" {
+		t.Fatalf("expected name %q, got %q", ".myapp/config", p.Name)
 	}
 }
 
@@ -113,8 +113,8 @@ func TestAbsReturnsFixedPath(t *testing.T) {
 	if p.Resolve() != "/etc/app/config.json" {
 		t.Fatalf("got %q, want %q", p.Resolve(), "/etc/app/config.json")
 	}
-	if p.Name != "absolute:  /etc/app/config.json" {
-		t.Fatalf("name: got %q, want %q", p.Name, "absolute:  /etc/app/config.json")
+	if p.Name != "/etc/app/config.json" {
+		t.Fatalf("name: got %q, want %q", p.Name, "/etc/app/config.json")
 	}
 }
 
@@ -130,7 +130,7 @@ func TestRelativeResolvesAgainstCWD(t *testing.T) {
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
-	if p.Name != "relative:  config.json" {
-		t.Fatalf("name: got %q, want %q", p.Name, "relative:  config.json")
+	if p.Name != "config.json" {
+		t.Fatalf("name: got %q, want %q", p.Name, "config.json")
 	}
 }

@@ -94,10 +94,10 @@ $ go run main.go -h
 Usage:
     main [flags] [command]
 
-Configurations:
-FIELD                FLAG                  ENV                 DEFAULT                      USAGE
------                -----                 -----               -------                      -----
+FIELDS               FLAG                  ENV                 DEFAULT                      USAGE
+------               -----                 -----               -------                      -----
 Hosts                -hosts                HOSTS               localhost,localhost.local    the ip or domains to bind to
+RegionTimeouts       -regiontimeouts       REGIONTIMEOUTS      us:500ms,eu:1s,ap:1200ms     per-region request timeouts
 Redis.Address        -redis-address        REDIS_ADDRESS       redis-master                 
 Redis.Port           -redis-port           REDIS_PORT          6379                         
 Redis.Password       -redis-password       REDIS_PASSWORD                                   
@@ -108,9 +108,8 @@ Database.Port        -database-port        SERVICE_PORT        28015
 Database.Database    -database-database    DB                  my-project                   
 Mode                 [command]             MODE                start                        run|start|stop
 
-Configuration Files:
-    workspace: .demo-app/config.json
-    relative:  config.json
+Files: .demo-app/config.json
+       config.json
 
 ```
 ```sh
@@ -215,9 +214,8 @@ $ go run main.go -h
 Usage:
     main [flags] [command]
 
-Configurations:
-FIELD                  FLAG                    ENV                    DEFAULT                      USAGE
------                  -----                   -----                  -------                      -----
+FIELDS                 FLAG                    ENV                    DEFAULT                      USAGE
+------                 -----                   -----                  -------                      -----
 Hosts                  -hosts                  HOSTS                  localhost,localhost.local    the ip or domains to bind to
 Redis.Address          -redis-address          REDIS_ADDRESS          redis-master                 
 Redis.Port             -redis-port             REDIS_PORT             6379                         
@@ -225,7 +223,7 @@ Redis.Password         -redis-password         REDIS_PASSWORD
 Redis.DB               -redis-db               REDIS_DB               0                            
 Redis.Expire           -redis-expire           REDIS_EXPIRE           5s                           
 Database.Address       -database-address       DATABASE_ADDRESS       localhost                    
-Database.Database      -main-db-db             DB_NAME                my-project
+Database.Main.DB.DB    -database-main-db-db    DB_NAME                my-project
 Database.Service.Port  -database-service-port  DATABASE_SERVICE_PORT  28015
 ```
 
@@ -341,6 +339,26 @@ Visitors get a _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ of
 Plugins that load the configurations from flat structures (e.g flags, environment variables, default tags) are good candidates for this type of plugin.
 See [env plugin](plugins/env/env.go) for an example.
 
+### FoldVisitors
+
+FoldVisitors are a specialized type of visitor that also traverse `Folded` fields—dynamic collections of complex objects like maps or slices of structs. Because these fields cannot be naturally represented via simple flat inputs (like a single flag or environment variable), traditional `Visitor` plugins ignore them.
+
+A `FoldVisitor` receives a flat view of *all* fields, including the sub-fields of any `Folded` collections, enabling them to merge dynamic configuration sets. A great example of this is configuring Webhooks:
+
+```go
+type Webhook struct {
+    URL    string   `usage:"destination url"`
+    Secret string   `usage:"signing secret"`
+    Events []string `usage:"list of events to subscribe to"`
+}
+
+type Config struct {
+    Webhooks []Webhook `fileset:"webhooks"`
+}
+```
+
+The [fileset](plugins/fileset/fileset.go) plugin is a `FoldVisitor` that natively parses and merges directories of configuration files into your `Folded` fields.
+
 ### Walkers
 
 Walkers are used for configuration plugins that take the whole config struct and unmarshal the underlying content into the config struct.
@@ -399,6 +417,7 @@ conf.Watch(ctx, func(ctx context.Context, c *Config) error {
 | [env](plugins/env) | Visitor | Reads environment variables |
 | [flag](plugins/flag) | Visitor | Command-line flags with `-h` / `--help` support |
 | [file](plugins/file) | Walker | Loads config from files (JSON, TOML, etc.) with lazy path resolution via `file.Absolute`, `file.Relative`, and `file.Workspace` |
+| [fileset](plugins/fileset) | FoldVisitor | Parses and merges directories of configuration files into `Folded` fields |
 | [secret](plugins/secret) | Visitor | Loads secrets from external providers |
 
 ### Plugin Ordering

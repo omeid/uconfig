@@ -36,7 +36,7 @@ var secrets = secret.New(func(name string) (string, error) {
 	// you please, aws secrets-manager, hashicorp vault, or wherever.
 	value, ok := secretsource.Get(name)
 	if !ok {
-		return "", secret.ErrSecretNotFound
+		return "", fmt.Errorf("%w: %s", secret.ErrSecretNotFound, name)
 	}
 
 	return value, nil

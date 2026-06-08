@@ -3,6 +3,7 @@ package uconfig_test
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,15 +12,15 @@ import (
 	"github.com/omeid/uconfig/internal/f"
 	"github.com/omeid/uconfig/plugins"
 	"github.com/omeid/uconfig/plugins/file"
+	"github.com/omeid/uconfig/plugins/fileset"
 	"github.com/omeid/uconfig/plugins/secret"
 )
 
 const expectedUsageMessage = `Usage:
     uconfig.test [flags] [command]
 
-Configurations:
-FIELD                   FLAG                     ENV                     DEFAULT    GOODPLUGIN              SECRET              USAGE
------                   -----                    -----                   -------    ----------              ------              -----
+FIELDS                  FLAG                     ENV                     DEFAULT    GOODPLUGIN              SECRET              USAGE
+------                  -----                    -----                   -------    ----------              ------              -----
 Version                 -version                 VERSION                            Version                                     
 GoHard                  -gohard                  GOHARD                             GoHard                                      
 Redis.Address           -redis-address           REDIS_ADDRESS                      Redis.Address                               
@@ -28,11 +29,20 @@ Rethink.Host.Address    -rethink-host-address    RETHINK_HOST_ADDRESS           
 Rethink.Host.Port       -rethink-host-port       RETHINK_HOST_PORT                  Rethink.Host.Port                           
 Rethink.Db              -rethink-db              RETHINK_DB              primary    Rethink.Db                                  main database used by our application
 Rethink.Password        -rethink-password        RETHINK_PASSWORD                   Rethink.Password        RETHINK_PASSWORD    
+Apps                    -apps                    APPS                               Apps                                        
 Command                 [command]                COMMAND                 run        Command                                     
 
-Configuration Files:
-    absolute:  /etc/app/config.yaml
-    relative:  config.json
+Files: /etc/app/config.yaml
+       config.json
+       absolute:  testdata/etc/app/*.yaml
+       relative:  testdata/apps.d/*.json
+
+
+FOLDED         TYPE           USAGE
+------         ----           -----
+Webhooks       []f.Webhook    
+    .URL       string         destination url
+    .Events    []string       list of events to subscribe to
 `
 
 type UselessPluginVisitor struct {
@@ -55,6 +65,11 @@ var files = uconfig.Files{
 }
 
 func TestUsage(t *testing.T) {
+	// Isolate from go test flags
+	oldArgs := os.Args
+	os.Args = []string{"uconfig.test"}
+	defer func() { os.Args = oldArgs }()
+
 	var stdout bytes.Buffer
 	uconfig.UsageOutput = &stdout
 
@@ -70,7 +85,19 @@ func TestUsage(t *testing.T) {
 
 	secretProvider := func(name string) (string, error) { return "top secret token", nil }
 
-	conf := uconfig.Classic[f.Config](files, secret.New(secretProvider), noopPlugin)
+	fsPluginAbs := fileset.New("apps", fileset.Path{Name: "absolute:  testdata/etc/app/*.yaml", Resolve: func() ([]string, error) {
+		return []string{"testdata/etc/app/match1.yml", "testdata/etc/app/match2.yml"}, nil
+	}}, json.Unmarshal)
+	fsPluginRel := fileset.New("apps", fileset.Path{Name: "relative:  testdata/apps.d/*.json", Resolve: func() ([]string, error) {
+		return []string{"testdata/apps.d/a.json", "testdata/apps.d/b.json"}, nil
+	}}, json.Unmarshal)
+
+	type UsageConfig struct {
+		f.Config
+		Apps []string `fileset:"apps"`
+	}
+
+	conf := uconfig.Classic[UsageConfig](files, secret.New(secretProvider), noopPlugin, fsPluginAbs, fsPluginRel)
 	_, err := conf.Parse()
 	if err != nil {
 		t.Fatal(err)
@@ -89,6 +116,9 @@ func TestUsage(t *testing.T) {
 	output := stdout.String()
 
 	if diff := cmp.Diff(expectedUsageMessage, output); diff != "" {
-		t.Error(diff)
+		t.Fatalf(
+			"Expected Usage Output to be same as expectedUsageMessage:\n%s",
+			diff,
+		)
 	}
 }
