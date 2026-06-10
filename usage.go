@@ -206,8 +206,8 @@ func printFileGroup(w io.Writer, header string, texts []string) {
 
 // printFilesetGroup prints a fileset group inline:
 //
-//	    Fileset:            absolute: /etc/app/*.yaml
-//	                        relative: apps.d/*.json
+//	Fileset:            absolute: /etc/app/*.yaml
+//	                    relative: apps.d/*.json
 func printFilesetGroup(w io.Writer, header string, texts []string) {
 	prefix := "    " + header + ":\t"
 	padding := "\t"
@@ -263,8 +263,8 @@ func getHeaders(fs flat.Fields) []string {
 	weights := map[string]int{
 		"fields": 1,
 		"usage":  99,
-		"flag":  3,
-		"env":   4,
+		"flag":   3,
+		"env":    4,
 	}
 
 	weight := func(tags []string, i int) int {

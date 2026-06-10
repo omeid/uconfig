@@ -7,13 +7,13 @@ import (
 	"io"
 	"os"
 
+	"github.com/omeid/uconfig/paths"
 	"github.com/omeid/uconfig/plugins"
 )
 
-// Files represents a set of file paths and the appropriate
-// unmarshal function for the given file.
+// Files represents a list of paths and their unmarshal functions.
 type Files []struct {
-	Path      Path
+	Path      paths.One
 	Unmarshal Unmarshal
 	Optional  bool
 }
@@ -24,8 +24,8 @@ func (f Files) Plugins() []plugins.Plugin {
 	ps := make([]plugins.Plugin, 0, len(f))
 	for _, f := range f {
 		ps = append(ps, &walker{
-			name:      f.Path.Name,
-			kind:      f.Path.Kind,
+			name:      f.Path.Name(),
+			kind:      f.Path.Kind(),
 			resolve:   f.Path.Resolve,
 			unmarshal: f.Unmarshal,
 			optional:  f.Optional,
@@ -80,7 +80,7 @@ func (w *walker) SourcePaths() []plugins.SourcePath {
 // Usage implements plugins.Usage.
 func (w *walker) Usage(fieldname string) (string, string) {
 	if fieldname == "." {
-		if w.kind != Unknown {
+		if w.kind != paths.Unknown {
 			return "Files", fmt.Sprintf("%-10s %s", w.kind.String()+":", w.name)
 		}
 		return "Files", w.name
@@ -90,7 +90,7 @@ func (w *walker) Usage(fieldname string) (string, string) {
 
 type walker struct {
 	name      string        // display name (as the user wrote it)
-	kind      Kind          // path kind (absolute, relative, workspace)
+	kind      paths.Kind    // path kind (absolute, relative, workspace)
 	filepath  string        // resolved absolute path (set during Walk)
 	resolve   func() string // lazy resolver (from Path.Resolve)
 	src       io.Reader     // only set when created via NewReader

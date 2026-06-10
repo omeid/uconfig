@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/omeid/uconfig/flat"
+	"github.com/omeid/uconfig/paths"
 	"github.com/omeid/uconfig/plugins"
 	"github.com/omeid/uconfig/plugins/file"
 )
@@ -18,41 +19,38 @@ func init() {
 	plugins.RegisterTag(tag)
 }
 
-// Path pairs a display name with a lazy path resolver.
-type Path struct {
-	Name    string
-	Kind    string // "absolute", "relative", etc.
-	Resolve func() ([]string, error)
+type absolute string
+
+func (a absolute) Name() string               { return string(a) }
+func (a absolute) Kind() paths.Kind           { return paths.Absolute }
+func (a absolute) Resolve() ([]string, error) { return filepath.Glob(string(a)) }
+
+// Absolute returns a paths.Set for a fixed absolute path/glob.
+func Absolute(pattern string) paths.Set {
+	return absolute(pattern)
 }
 
-// Absolute returns a Path for a fixed absolute path/glob.
-func Absolute(pattern string) Path {
-	return Path{
-		Name:    pattern,
-		Kind:    "absolute",
-		Resolve: func() ([]string, error) { return filepath.Glob(pattern) },
+type relative string
+
+func (r relative) Name() string     { return string(r) }
+func (r relative) Kind() paths.Kind { return paths.Relative }
+func (r relative) Resolve() ([]string, error) {
+	abs, err := filepath.Abs(string(r))
+	if err != nil {
+		return nil, err
 	}
+	return filepath.Glob(abs)
 }
 
-// Relative returns a Path that resolves a relative path/glob against
+// Relative returns a paths.Set that resolves a relative path/glob against
 // the working directory at the time of the call.
-func Relative(pattern string) Path {
-	return Path{
-		Name: pattern,
-		Kind: "relative",
-		Resolve: func() ([]string, error) {
-			abs, err := filepath.Abs(pattern)
-			if err != nil {
-				return nil, err
-			}
-			return filepath.Glob(abs)
-		},
-	}
+func Relative(pattern string) paths.Set {
+	return relative(pattern)
 }
 
 type visitor struct {
 	name         string
-	path         Path
+	path         paths.Set
 	unmarshal    func(any) error
 	currentData  []byte
 	fields       flat.Fields
@@ -60,7 +58,7 @@ type visitor struct {
 }
 
 // New returns a fileset plugin.
-func New(name string, path Path, unmarshaller file.Unmarshal) plugins.Plugin {
+func New(name string, path paths.Set, unmarshaller file.Unmarshal) plugins.Plugin {
 	v := &visitor{
 		name: name,
 		path: path,
@@ -101,7 +99,7 @@ func (v *visitor) Parse() error {
 
 	files, err := v.path.Resolve()
 	if err != nil {
-		return fmt.Errorf("fileset: failed to resolve path %q: %w", v.path.Name, err)
+		return fmt.Errorf("fileset: failed to resolve path %q: %w", v.path.Name(), err)
 	}
 
 	for _, file := range files {
@@ -123,7 +121,7 @@ func (v *visitor) Parse() error {
 
 // SourcePaths implements plugins.SourcePaths.
 func (v *visitor) SourcePaths() []plugins.SourcePath {
-	pattern := v.path.Name
+	pattern := v.path.Name()
 	if pattern == "" {
 		return nil
 	}
@@ -135,7 +133,7 @@ func (v *visitor) SourcePaths() []plugins.SourcePath {
 	baseDir := getBaseDir(pattern)
 	absDir, err := filepath.Abs(baseDir)
 	if err == nil {
-		return []plugins.SourcePath{{Name: v.path.Name, Path: absDir}}
+		return []plugins.SourcePath{{Name: v.path.Name(), Path: absDir}}
 	}
 	return nil
 }
@@ -147,7 +145,7 @@ func (v *visitor) Usage(fieldname string) (string, string) {
 		name, _ = v.matchedField.Name("")
 	}
 	if name == fieldname {
-		return "Fileset", v.path.Kind + ": " + v.path.Name + "\t\n"
+		return "Fileset", v.path.Kind().String() + ": " + v.path.Name() + "\t\n"
 	}
 	return "", ""
 }

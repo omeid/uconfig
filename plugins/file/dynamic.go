@@ -3,61 +3,64 @@ package file
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/omeid/uconfig/paths"
 )
 
-type Kind int
+type absolute string
 
-const (
-	Unknown Kind = iota
-	AbsoluteKind
-	RelativeKind
-	WorkspaceKind
-)
+func (a absolute) Name() string     { return string(a) }
+func (a absolute) Kind() paths.Kind { return paths.Absolute }
+func (a absolute) Resolve() string  { return string(a) }
 
-func (k Kind) String() string {
-	switch k {
-	case AbsoluteKind:
-		return "absolute"
-	case RelativeKind:
-		return "relative"
-	case WorkspaceKind:
-		return "workspace"
-	default:
-		return "unknown"
+// Absolute returns a paths.One for a fixed absolute path.
+func Absolute(path string) paths.One {
+	return absolute(path)
+}
+
+type relative string
+
+func (r relative) Name() string     { return string(r) }
+func (r relative) Kind() paths.Kind { return paths.Relative }
+func (r relative) Resolve() string {
+	abs, err := filepath.Abs(string(r))
+	if err != nil {
+		return string(r)
 	}
+	return abs
 }
 
-// Path pairs a display name with a lazy path resolver.
-// The Name is shown in usage output; Resolve is called during
-// Walk to obtain the actual filesystem path.
-type Path struct {
-	Name    string
-	Kind    Kind
-	Resolve func() string
-}
-
-// Absolute returns a Path for a fixed absolute path.
-func Absolute(path string) Path {
-	return Path{Name: path, Kind: AbsoluteKind, Resolve: func() string { return path }}
-}
-
-// Relative returns a Path that resolves a relative path against
+// Relative returns a paths.One that resolves a relative path against
 // the working directory at the time of the call.
-func Relative(path string) Path {
-	return Path{
-		Name: path,
-		Kind: RelativeKind,
-		Resolve: func() string {
-			abs, err := filepath.Abs(path)
-			if err != nil {
-				return path
-			}
-			return abs
-		},
+func Relative(path string) paths.One {
+	return relative(path)
+}
+
+type workspace string
+
+func (w workspace) Name() string     { return string(w) }
+func (w workspace) Kind() paths.Kind { return paths.Workspace }
+func (w workspace) Resolve() string {
+	dir, err := filepath.Abs(".")
+	if err != nil {
+		return ""
+	}
+
+	for {
+		candidate := filepath.Join(dir, string(w))
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// Reached root
+			return ""
+		}
+		dir = parent
 	}
 }
 
-// Workspace returns a Path that walks up the directory tree looking
+// Workspace returns a paths.One that walks up the directory tree looking
 // for a file at the given relative path (e.g. ".myapp/config").
 // Returns the absolute path of the first match, or empty string if
 // not found.
@@ -66,27 +69,6 @@ func Relative(path string) Path {
 //
 // This implements the common ancestor-directory search pattern used by
 // tools like git (.git), eslint (.eslintrc), and similar.
-func Workspace(name string) Path {
-	return Path{
-		Name: name,
-		Kind: WorkspaceKind,
-		Resolve: func() string {
-			dir, err := filepath.Abs(".")
-			if err != nil {
-				return ""
-			}
-
-			for {
-				candidate := filepath.Join(dir, name)
-				if _, err := os.Stat(candidate); err == nil {
-					return candidate
-				}
-				parent := filepath.Dir(dir)
-				if parent == dir {
-					return "" // reached filesystem root
-				}
-				dir = parent
-			}
-		},
-	}
+func Workspace(name string) paths.One {
+	return workspace(name)
 }

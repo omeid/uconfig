@@ -60,9 +60,11 @@ var files = uconfig.Files{
 	// in the given order.
 }
 
-var fsPluginAbs = fileset.New("apps", fileset.Absolute("/etc/app/*.yaml"), json.Unmarshal)
-var fsPluginRel = fileset.New("apps", fileset.Relative("apps.d/*.json"), json.Unmarshal)
-var fsPluginWebhooks = fileset.New("webhooks", fileset.Relative("webhooks.d/*.json"), json.Unmarshal)
+var (
+	fsPluginAbs      = fileset.New("apps", fileset.Absolute("/etc/app/*.yaml"), json.Unmarshal)
+	fsPluginRel      = fileset.New("apps", fileset.Relative("apps.d/*.json"), json.Unmarshal)
+	fsPluginWebhooks = fileset.New("webhooks", fileset.Relative("webhooks.d/*.json"), json.Unmarshal)
+)
 
 var conf = uconfig.Classic[Config](files, fsPluginAbs, fsPluginRel, fsPluginWebhooks)
 

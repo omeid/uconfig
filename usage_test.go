@@ -10,6 +10,7 @@ import (
 	"github.com/omeid/uconfig"
 	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/internal/f"
+	"github.com/omeid/uconfig/paths"
 	"github.com/omeid/uconfig/plugins"
 	"github.com/omeid/uconfig/plugins/file"
 	"github.com/omeid/uconfig/plugins/fileset"
@@ -84,12 +85,22 @@ func TestUsage(t *testing.T) {
 
 	secretProvider := func(name string) (string, error) { return "top secret token", nil }
 
-	fsPluginAbs := fileset.New("apps", fileset.Path{Name: "absolute:  testdata/etc/app/*.yaml", Resolve: func() ([]string, error) {
-		return []string{"testdata/etc/app/match1.yml", "testdata/etc/app/match2.yml"}, nil
-	}}, json.Unmarshal)
-	fsPluginRel := fileset.New("apps", fileset.Path{Name: "relative:  testdata/apps.d/*.json", Resolve: func() ([]string, error) {
-		return []string{"testdata/apps.d/a.json", "testdata/apps.d/b.json"}, nil
-	}}, json.Unmarshal)
+	// the test creates an ad-hoc implementation of paths.Set:
+	fsPluginAbs := fileset.New("apps", mockSet{
+		name: "testdata/etc/app/*.yaml",
+		kind: paths.Absolute,
+		resolve: func() ([]string, error) {
+			return []string{"testdata/etc/app/match1.yml", "testdata/etc/app/match2.yml"}, nil
+		},
+	}, json.Unmarshal)
+
+	fsPluginRel := fileset.New("apps", mockSet{
+		name: "testdata/apps.d/*.json",
+		kind: paths.Relative,
+		resolve: func() ([]string, error) {
+			return []string{"testdata/apps.d/a.json", "testdata/apps.d/b.json"}, nil
+		},
+	}, json.Unmarshal)
 
 	type UsageConfig struct {
 		f.Config
@@ -121,3 +132,13 @@ func TestUsage(t *testing.T) {
 		)
 	}
 }
+
+type mockSet struct {
+	name    string
+	kind    paths.Kind
+	resolve func() ([]string, error)
+}
+
+func (m mockSet) Name() string               { return m.name }
+func (m mockSet) Kind() paths.Kind           { return m.kind }
+func (m mockSet) Resolve() ([]string, error) { return m.resolve() }

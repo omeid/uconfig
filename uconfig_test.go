@@ -242,12 +242,16 @@ func TestWatchReloadsOnUpdate(t *testing.T) {
 	var calls atomic.Int32
 	started := make(chan struct{}, 5)
 
-	go conf.Watch(ctx, func(ctx context.Context, c *simpleConfig) error {
-		calls.Add(1)
-		started <- struct{}{}
-		<-ctx.Done()
-		return nil
-	})
+	go func() {
+		if err := conf.Watch(ctx, func(ctx context.Context, c *simpleConfig) error {
+			calls.Add(1)
+			started <- struct{}{}
+			<-ctx.Done()
+			return nil
+		}); err != nil && !errors.Is(err, context.Canceled) {
+			t.Errorf("watch failed: %v", err)
+		}
+	}()
 
 	<-started
 	if calls.Load() != 1 {
@@ -278,12 +282,16 @@ func TestWatchMultipleUpdaters(t *testing.T) {
 	var calls atomic.Int32
 	started := make(chan struct{}, 5)
 
-	go conf.Watch(ctx, func(ctx context.Context, c *simpleConfig) error {
-		calls.Add(1)
-		started <- struct{}{}
-		<-ctx.Done()
-		return nil
-	})
+	go func() {
+		if err := conf.Watch(ctx, func(ctx context.Context, c *simpleConfig) error {
+			calls.Add(1)
+			started <- struct{}{}
+			<-ctx.Done()
+			return nil
+		}); err != nil && !errors.Is(err, context.Canceled) {
+			t.Errorf("watch failed: %v", err)
+		}
+	}()
 
 	<-started // initial
 
@@ -380,8 +388,14 @@ type fMultiPluginConfig struct {
 
 func TestNewMultiplePluginsDefaultsOrder(t *testing.T) {
 	args := []string{"two"}
-	os.Setenv("ENABLED", "true")
-	defer os.Unsetenv("ENABLED")
+	if err := os.Setenv("ENABLED", "true"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Unsetenv("ENABLED"); err != nil {
+			t.Errorf("unsetenv failed: %v", err)
+		}
+	}()
 
 	fs := flag.New("testing", flag.PanicOnError, args)
 

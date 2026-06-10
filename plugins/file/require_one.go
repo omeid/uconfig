@@ -7,18 +7,19 @@ import (
 	"os"
 	"strings"
 
+	"github.com/omeid/uconfig/paths"
 	"github.com/omeid/uconfig/plugins"
 )
 
 var (
-	ErrNoFiles       = errors.New("require one: no file found")
+	ErrNoFiles       = errors.New("require one: no files found")
 	ErrMultipleFiles = errors.New("require one: multiple files found")
 )
 
 // RequireOne represents a set of file paths and their unmarshal functions,
 // where exactly one of the files must exist.
 type RequireOne []struct {
-	Path      Path
+	Path      paths.One
 	Unmarshal Unmarshal
 }
 
@@ -30,11 +31,11 @@ func (r RequireOne) Plugins() []plugins.Plugin {
 type requireOneWalker struct {
 	files RequireOne
 	match *struct {
-		Path      Path
+		Path      paths.One
 		Unmarshal Unmarshal
 	}
 	matchResolved string
-	conf any
+	conf          any
 }
 
 func (e *requireOneWalker) Walk(conf any) error {
@@ -42,11 +43,8 @@ func (e *requireOneWalker) Walk(conf any) error {
 	var found []string
 
 	for i, f := range e.files {
-		path := f.Path.Name
-		if f.Path.Resolve != nil {
-			path = f.Path.Resolve()
-		}
-		
+		path := f.Path.Resolve()
+
 		_, err := os.Stat(path)
 		if err == nil {
 			found = append(found, path)
@@ -78,7 +76,7 @@ func (e *requireOneWalker) Parse() error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	data, err := io.ReadAll(f)
 	if err != nil {
@@ -97,7 +95,7 @@ func (e *requireOneWalker) Parse() error {
 // SourcePaths implements plugins.SourcePaths.
 func (e *requireOneWalker) SourcePaths() []plugins.SourcePath {
 	if e.match != nil {
-		return []plugins.SourcePath{{Name: e.match.Path.Name, Path: e.matchResolved}}
+		return []plugins.SourcePath{{Name: e.match.Path.Name(), Path: e.matchResolved}}
 	}
 	return nil
 }
@@ -105,15 +103,15 @@ func (e *requireOneWalker) SourcePaths() []plugins.SourcePath {
 // Usage implements plugins.Usage.
 func (e *requireOneWalker) Usage(fieldname string) (string, string) {
 	if fieldname == "." {
-		var paths []string
+		var pathsList []string
 		for _, f := range e.files {
-			if f.Path.Kind != Unknown {
-				paths = append(paths, fmt.Sprintf("%-10s %s", f.Path.Kind.String()+":", f.Path.Name))
+			if f.Path.Kind() != paths.Unknown {
+				pathsList = append(pathsList, fmt.Sprintf("%-10s %s", f.Path.Kind().String()+":", f.Path.Name()))
 			} else {
-				paths = append(paths, f.Path.Name)
+				pathsList = append(pathsList, f.Path.Name())
 			}
 		}
-		return "Files Required One", strings.Join(paths, "\n")
+		return "Files Required One", strings.Join(pathsList, "\n")
 	}
 	return "", ""
 }

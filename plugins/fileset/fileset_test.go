@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/omeid/uconfig"
+	"github.com/omeid/uconfig/paths"
 	"github.com/omeid/uconfig/plugins"
 )
 
@@ -43,24 +44,28 @@ func TestFilesetPlugin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("failed to remove dir: %v", err)
+		}
+	}()
 
 	// 2. Write test JSON files (one object per file for []App)
 	app1Content := `{"name": "auth", "port": 8080}`
 	app2Content := `{"name": "users", "port": 8081}`
 	app3Content := `{"name": "gateway", "port": 9000}`
 
-	err = os.WriteFile(filepath.Join(tempDir, "app1.json"), []byte(app1Content), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "app1.json"), []byte(app1Content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write app1.json: %v", err)
 	}
 
-	err = os.WriteFile(filepath.Join(tempDir, "app2.json"), []byte(app2Content), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "app2.json"), []byte(app2Content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write app2.json: %v", err)
 	}
 
-	err = os.WriteFile(filepath.Join(tempDir, "app3.json"), []byte(app3Content), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "app3.json"), []byte(app3Content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write app3.json: %v", err)
 	}
@@ -108,22 +113,27 @@ func TestUsage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("failed to remove dir: %v", err)
+		}
+	}()
 
 	file1 := filepath.Join(tempDir, "config1.json")
 	file2 := filepath.Join(tempDir, "config2.json")
-	
-	if err := os.WriteFile(file1, []byte(`{"A": "1"}`), 0644); err != nil {
+
+	if err := os.WriteFile(file1, []byte(`{"A": "1"}`), 0o644); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
-	if err := os.WriteFile(file2, []byte(`{"A": "2"}`), 0644); err != nil {
+	if err := os.WriteFile(file2, []byte(`{"A": "2"}`), 0o644); err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
-	p := New("my apps", Path{
-		Name: "test: " + filepath.Join(tempDir, "*.json"),
-		Kind: "absolute",
-		Resolve: func() ([]string, error) {
+	// The test creates an ad-hoc implementation of paths.Set:
+	p := New("my apps", testSet{
+		name: "test: " + filepath.Join(tempDir, "*.json"),
+		kind: paths.Absolute,
+		resolve: func() ([]string, error) {
 			return []string{file1, file2}, nil
 		},
 	}, json.Unmarshal)
@@ -154,14 +164,18 @@ func TestRelativePath(t *testing.T) {
 
 	tempDirName := "test_temp_relative_dir"
 	tempDir := filepath.Join(wd, tempDirName)
-	err = os.Mkdir(tempDir, 0755)
+	err = os.Mkdir(tempDir, 0o755)
 	if err != nil {
 		t.Fatalf("failed to create relative temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("failed to remove dir: %v", err)
+		}
+	}()
 
 	appContent := `{"name": "test", "port": 1234}`
-	err = os.WriteFile(filepath.Join(tempDir, "app.json"), []byte(appContent), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "app.json"), []byte(appContent), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write app.json: %v", err)
 	}
@@ -184,9 +198,13 @@ func TestInvalidConfigTypes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("failed to remove dir: %v", err)
+		}
+	}()
 
-	err = os.WriteFile(filepath.Join(tempDir, "app.json"), []byte("{}"), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "app.json"), []byte("{}"), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write app.json: %v", err)
 	}
@@ -224,18 +242,22 @@ func TestMapConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("failed to remove dir: %v", err)
+		}
+	}()
 
 	// 2. Write test JSON files (single object per file for map[string]App)
 	app1Content := `{"name": "auth", "port": 8080}`
 	app2Content := `{"name": "gateway", "port": 9000}`
 
-	err = os.WriteFile(filepath.Join(tempDir, "auth.json"), []byte(app1Content), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "auth.json"), []byte(app1Content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write auth.json: %v", err)
 	}
 
-	err = os.WriteFile(filepath.Join(tempDir, "gateway.json"), []byte(app2Content), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "gateway.json"), []byte(app2Content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write gateway.json: %v", err)
 	}
@@ -268,7 +290,11 @@ func TestMapSliceConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("failed to remove dir: %v", err)
+		}
+	}()
 
 	// 2. Write test JSON files (slice per file for map[string][]App)
 	app1Content := `[
@@ -279,12 +305,12 @@ func TestMapSliceConfig(t *testing.T) {
 		{"name": "gateway", "port": 9000}
 	]`
 
-	err = os.WriteFile(filepath.Join(tempDir, "auth.json"), []byte(app1Content), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "auth.json"), []byte(app1Content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write auth.json: %v", err)
 	}
 
-	err = os.WriteFile(filepath.Join(tempDir, "gateway.json"), []byte(app2Content), 0644)
+	err = os.WriteFile(filepath.Join(tempDir, "gateway.json"), []byte(app2Content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write gateway.json: %v", err)
 	}
@@ -316,3 +342,12 @@ func TestMapSliceConfig(t *testing.T) {
 	}
 }
 
+type testSet struct {
+	name    string
+	kind    paths.Kind
+	resolve func() ([]string, error)
+}
+
+func (t testSet) Name() string               { return t.name }
+func (t testSet) Kind() paths.Kind           { return t.kind }
+func (t testSet) Resolve() ([]string, error) { return t.resolve() }

@@ -10,12 +10,25 @@ import (
 
 func TestWorkspaceFindsInCWD(t *testing.T) {
 	dir := t.TempDir()
-	os.MkdirAll(filepath.Join(dir, ".myapp"), 0755)
-	os.WriteFile(filepath.Join(dir, ".myapp", "config"), []byte("{}"), 0644)
+	if err := os.MkdirAll(filepath.Join(dir, ".myapp"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".myapp", "config"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
-	orig, _ := os.Getwd()
-	os.Chdir(dir)
-	defer os.Chdir(orig)
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(orig); err != nil {
+			t.Errorf("chdir: %v", err)
+		}
+	}()
 
 	got := file.Workspace(".myapp/config").Resolve()
 	want := filepath.Join(dir, ".myapp", "config")
@@ -26,15 +39,30 @@ func TestWorkspaceFindsInCWD(t *testing.T) {
 
 func TestWorkspaceWalksUp(t *testing.T) {
 	root := t.TempDir()
-	os.MkdirAll(filepath.Join(root, ".myapp"), 0755)
-	os.WriteFile(filepath.Join(root, ".myapp", "config"), []byte("{}"), 0644)
+	if err := os.MkdirAll(filepath.Join(root, ".myapp"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".myapp", "config"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	nested := filepath.Join(root, "a", "b", "c")
-	os.MkdirAll(nested, 0755)
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
 
-	orig, _ := os.Getwd()
-	os.Chdir(nested)
-	defer os.Chdir(orig)
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(nested); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(orig); err != nil {
+			t.Errorf("chdir: %v", err)
+		}
+	}()
 
 	got := file.Workspace(".myapp/config").Resolve()
 	want := filepath.Join(root, ".myapp", "config")
@@ -46,16 +74,33 @@ func TestWorkspaceWalksUp(t *testing.T) {
 func TestWorkspaceReturnsClosest(t *testing.T) {
 	root := t.TempDir()
 
-	os.MkdirAll(filepath.Join(root, ".myapp"), 0755)
-	os.WriteFile(filepath.Join(root, ".myapp", "config"), []byte(`{"level":"root"}`), 0644)
+	if err := os.MkdirAll(filepath.Join(root, ".myapp"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".myapp", "config"), []byte(`{"level":"root"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	child := filepath.Join(root, "project")
-	os.MkdirAll(filepath.Join(child, ".myapp"), 0755)
-	os.WriteFile(filepath.Join(child, ".myapp", "config"), []byte(`{"level":"child"}`), 0644)
+	if err := os.MkdirAll(filepath.Join(child, ".myapp"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(child, ".myapp", "config"), []byte(`{"level":"child"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
-	orig, _ := os.Getwd()
-	os.Chdir(child)
-	defer os.Chdir(orig)
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(child); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(orig); err != nil {
+			t.Errorf("chdir: %v", err)
+		}
+	}()
 
 	got := file.Workspace(".myapp/config").Resolve()
 	want := filepath.Join(child, ".myapp", "config")
@@ -67,9 +112,18 @@ func TestWorkspaceReturnsClosest(t *testing.T) {
 func TestWorkspaceNotFound(t *testing.T) {
 	dir := t.TempDir()
 
-	orig, _ := os.Getwd()
-	os.Chdir(dir)
-	defer os.Chdir(orig)
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(orig); err != nil {
+			t.Errorf("chdir: %v", err)
+		}
+	}()
 
 	got := file.Workspace(".nonexistent/config").Resolve()
 	if got != "" {
@@ -80,9 +134,18 @@ func TestWorkspaceNotFound(t *testing.T) {
 func TestWorkspaceIsLazy(t *testing.T) {
 	dir := t.TempDir()
 
-	orig, _ := os.Getwd()
-	os.Chdir(dir)
-	defer os.Chdir(orig)
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(orig); err != nil {
+			t.Errorf("chdir: %v", err)
+		}
+	}()
 
 	// Create the resolver before the file exists.
 	resolve := file.Workspace(".myapp/config")
@@ -92,8 +155,12 @@ func TestWorkspaceIsLazy(t *testing.T) {
 	}
 
 	// Now create the file.
-	os.MkdirAll(filepath.Join(dir, ".myapp"), 0755)
-	os.WriteFile(filepath.Join(dir, ".myapp", "config"), []byte("{}"), 0644)
+	if err := os.MkdirAll(filepath.Join(dir, ".myapp"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".myapp", "config"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	want := filepath.Join(dir, ".myapp", "config")
 	if got := resolve.Resolve(); got != want {
@@ -103,8 +170,8 @@ func TestWorkspaceIsLazy(t *testing.T) {
 
 func TestWorkspaceDisplayName(t *testing.T) {
 	p := file.Workspace(".myapp/config")
-	if p.Name != ".myapp/config" {
-		t.Fatalf("expected name %q, got %q", ".myapp/config", p.Name)
+	if p.Name() != ".myapp/config" {
+		t.Fatalf("expected name %q, got %q", ".myapp/config", p.Name())
 	}
 }
 
@@ -113,16 +180,25 @@ func TestAbsReturnsFixedPath(t *testing.T) {
 	if p.Resolve() != "/etc/app/config.json" {
 		t.Fatalf("got %q, want %q", p.Resolve(), "/etc/app/config.json")
 	}
-	if p.Name != "/etc/app/config.json" {
-		t.Fatalf("name: got %q, want %q", p.Name, "/etc/app/config.json")
+	if p.Name() != "/etc/app/config.json" {
+		t.Fatalf("name: got %q, want %q", p.Name(), "/etc/app/config.json")
 	}
 }
 
 func TestRelativeResolvesAgainstCWD(t *testing.T) {
 	dir := t.TempDir()
-	orig, _ := os.Getwd()
-	os.Chdir(dir)
-	defer os.Chdir(orig)
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(orig); err != nil {
+			t.Errorf("chdir: %v", err)
+		}
+	}()
 
 	p := file.Relative("config.json")
 	got := p.Resolve()
@@ -130,7 +206,7 @@ func TestRelativeResolvesAgainstCWD(t *testing.T) {
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
-	if p.Name != "config.json" {
-		t.Fatalf("name: got %q, want %q", p.Name, "config.json")
+	if p.Name() != "config.json" {
+		t.Fatalf("name: got %q, want %q", p.Name(), "config.json")
 	}
 }

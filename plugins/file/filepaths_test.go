@@ -75,11 +75,13 @@ func TestParseReReadsFile(t *testing.T) {
 	}
 
 	// Write initial config.
-	os.WriteFile(path, []byte(`{"name":"v1"}`), 0644)
+	os.WriteFile(path, []byte(`{"name":"v1"}`), 0o644)
 
 	plug := file.New(path, json.Unmarshal, file.Config{})
 	conf := &Config{}
-	plug.(plugins.Walker).Walk(conf)
+	if err := plug.(plugins.Walker).Walk(conf); err != nil {
+		t.Fatal(err)
+	}
 
 	// First parse.
 	if err := plug.Parse(); err != nil {
@@ -90,11 +92,13 @@ func TestParseReReadsFile(t *testing.T) {
 	}
 
 	// Change the file.
-	os.WriteFile(path, []byte(`{"name":"v2"}`), 0644)
+	os.WriteFile(path, []byte(`{"name":"v2"}`), 0o644)
 
 	// Re-walk with fresh struct and re-parse -- should read new content.
 	conf2 := &Config{}
-	plug.(plugins.Walker).Walk(conf2)
+	if err := plug.(plugins.Walker).Walk(conf2); err != nil {
+		t.Fatal(err)
+	}
 	if err := plug.Parse(); err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +110,9 @@ func TestParseReReadsFile(t *testing.T) {
 func TestParseOptionalMissing(t *testing.T) {
 	plug := file.New("/nonexistent/config.json", json.Unmarshal, file.Config{Optional: true})
 	conf := &struct{}{}
-	plug.(plugins.Walker).Walk(conf)
+	if err := plug.(plugins.Walker).Walk(conf); err != nil {
+		t.Fatal(err)
+	}
 
 	// Should not error.
 	if err := plug.Parse(); err != nil {
@@ -132,15 +138,17 @@ func TestParseMultipleTimes(t *testing.T) {
 		Value int `json:"value"`
 	}
 
-	os.WriteFile(path, []byte(`{"value":1}`), 0644)
+	os.WriteFile(path, []byte(`{"value":1}`), 0o644)
 
 	plug := file.New(path, json.Unmarshal, file.Config{})
 
 	// Parse 3 times, changing file each time.
 	for i := 1; i <= 3; i++ {
-		os.WriteFile(path, []byte(fmt.Sprintf(`{"value":%d}`, i)), 0644)
+		os.WriteFile(path, []byte(fmt.Sprintf(`{"value":%d}`, i)), 0o644)
 		conf := &Config{}
-		plug.(plugins.Walker).Walk(conf)
+		if err := plug.(plugins.Walker).Walk(conf); err != nil {
+			t.Fatal(err)
+		}
 		if err := plug.Parse(); err != nil {
 			t.Fatal(err)
 		}

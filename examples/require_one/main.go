@@ -28,7 +28,7 @@ var conf = uconfig.Classic[Config](files)
 
 func main() {
 	// Run() will parse and check for errors, including printing
-	// the usage message (with "Require One" files listed) if 0 or >1 
+	// the usage message (with "Require One" files listed) if 0 or >1
 	// of the required files exist, or if -h/--help is passed.
 	c := conf.Run()
 
