@@ -133,24 +133,13 @@ func TestUsage(t *testing.T) {
 		t.Fatalf("plugin does not implement plugins.Usage")
 	}
 
-	// Test Usage(".")
-	header, content := u.Usage(".")
-	expectedHeader := "Files"
-	if header != expectedHeader {
-		t.Errorf("expected header %q, got %q", expectedHeader, header)
-	}
-	expectedContent := "test: " + filepath.Join(tempDir, "*.json") + "\n"
-	if content != expectedContent {
-		t.Errorf("expected content %q, got %q", expectedContent, content)
-	}
-
 	// Test Usage("my apps")
-	header, content = u.Usage("my apps")
-	expectedHeader = "Fileset"
+	header, content := u.Usage("my apps")
+	expectedHeader := "Fileset"
 	if header != expectedHeader {
 		t.Errorf("expected header %q, got %q", expectedHeader, header)
 	}
-	expectedContent = "absolute: test: " + filepath.Join(tempDir, "*.json") + "\t\n"
+	expectedContent := "absolute: test: " + filepath.Join(tempDir, "*.json") + "\t\n"
 	if content != expectedContent {
 		t.Errorf("expected content %q, got %q", expectedContent, content)
 	}

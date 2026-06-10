@@ -32,10 +32,9 @@ Rethink.Password        -rethink-password        RETHINK_PASSWORD               
 Apps                    -apps                    APPS                               Apps                                        
 Command                 [command]                COMMAND                 run        Command                                     
 
-Files: /etc/app/config.yaml
-       config.json
-       absolute:  testdata/etc/app/*.yaml
-       relative:  testdata/apps.d/*.json
+Files:
+       absolute:  /etc/app/config.yaml
+       relative:  config.json
 
 
 FOLDED         TYPE           USAGE

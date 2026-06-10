@@ -5,17 +5,40 @@ import (
 	"path/filepath"
 )
 
+type Kind int
+
+const (
+	Unknown Kind = iota
+	AbsoluteKind
+	RelativeKind
+	WorkspaceKind
+)
+
+func (k Kind) String() string {
+	switch k {
+	case AbsoluteKind:
+		return "absolute"
+	case RelativeKind:
+		return "relative"
+	case WorkspaceKind:
+		return "workspace"
+	default:
+		return "unknown"
+	}
+}
+
 // Path pairs a display name with a lazy path resolver.
 // The Name is shown in usage output; Resolve is called during
 // Walk to obtain the actual filesystem path.
 type Path struct {
 	Name    string
+	Kind    Kind
 	Resolve func() string
 }
 
 // Absolute returns a Path for a fixed absolute path.
 func Absolute(path string) Path {
-	return Path{Name: path, Resolve: func() string { return path }}
+	return Path{Name: path, Kind: AbsoluteKind, Resolve: func() string { return path }}
 }
 
 // Relative returns a Path that resolves a relative path against
@@ -23,6 +46,7 @@ func Absolute(path string) Path {
 func Relative(path string) Path {
 	return Path{
 		Name: path,
+		Kind: RelativeKind,
 		Resolve: func() string {
 			abs, err := filepath.Abs(path)
 			if err != nil {
@@ -45,6 +69,7 @@ func Relative(path string) Path {
 func Workspace(name string) Path {
 	return Path{
 		Name: name,
+		Kind: WorkspaceKind,
 		Resolve: func() string {
 			dir, err := filepath.Abs(".")
 			if err != nil {

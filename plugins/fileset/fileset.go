@@ -142,9 +142,6 @@ func (v *visitor) SourcePaths() []plugins.SourcePath {
 
 // Usage implements plugins.Usage.
 func (v *visitor) Usage(fieldname string) (string, string) {
-	if fieldname == "." {
-		return "Files", v.path.Name + "\n"
-	}
 	name := v.name
 	if v.matchedField != nil {
 		name, _ = v.matchedField.Name("")

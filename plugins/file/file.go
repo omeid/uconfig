@@ -3,6 +3,7 @@ package file
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -24,6 +25,7 @@ func (f Files) Plugins() []plugins.Plugin {
 	for _, f := range f {
 		ps = append(ps, &walker{
 			name:      f.Path.Name,
+			kind:      f.Path.Kind,
 			resolve:   f.Path.Resolve,
 			unmarshal: f.Unmarshal,
 			optional:  f.Optional,
@@ -43,8 +45,8 @@ type Unmarshal func(src []byte, v any) error
 func NewReader(src io.Reader, filepath string, unmarshal Unmarshal) plugins.Plugin {
 	return &walker{
 		src:       src,
-		name:      filepath,
 		filepath:  filepath,
+		name:      filepath,
 		unmarshal: unmarshal,
 	}
 }
@@ -78,13 +80,17 @@ func (w *walker) SourcePaths() []plugins.SourcePath {
 // Usage implements plugins.Usage.
 func (w *walker) Usage(fieldname string) (string, string) {
 	if fieldname == "." {
-		return "Files", w.name + "\n"
+		if w.kind != Unknown {
+			return "Files", fmt.Sprintf("%-10s %s", w.kind.String()+":", w.name)
+		}
+		return "Files", w.name
 	}
 	return "", ""
 }
 
 type walker struct {
 	name      string        // display name (as the user wrote it)
+	kind      Kind          // path kind (absolute, relative, workspace)
 	filepath  string        // resolved absolute path (set during Walk)
 	resolve   func() string // lazy resolver (from Path.Resolve)
 	src       io.Reader     // only set when created via NewReader

@@ -183,8 +183,7 @@ func (c *config[C]) Usage() {
 //	        path2
 //	        path3
 func printFileGroup(w io.Writer, header string, texts []string) {
-	prefix := header + ": "
-	padding := strings.Repeat(" ", len(prefix))
+	padding := "       " // 7 spaces
 
 	// Collect all lines from all texts.
 	var lines []string
@@ -197,10 +196,9 @@ func printFileGroup(w io.Writer, header string, texts []string) {
 		}
 	}
 
-	for i, line := range lines {
-		if i == 0 {
-			_, _ = fmt.Fprintf(w, "\n%s%s\n", prefix, line)
-		} else {
+	if len(lines) > 0 {
+		_, _ = fmt.Fprintf(w, "\n%s:\n", header)
+		for _, line := range lines {
 			_, _ = fmt.Fprintf(w, "%s%s\n", padding, line)
 		}
 	}
