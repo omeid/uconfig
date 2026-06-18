@@ -61,14 +61,16 @@ type Config struct {
 
   // The Flags plugin allows capturing a single Command after the flags.
   // so you can run myprogram -flag=value -s -blah=bleh stop|start|stop and so on.
-  // The flags plugin will validate the command only if the usage tag matches a list of alphanum word seperated by `|` (eg. start|stop|status).
+  //
+  // The flags plugin will validate the command only if the usage tag matches a list of 
+  // alphanum word seperated by `|` (eg. start|stop|status).
   // Include `*` as an option (eg. "start|stop|*") to allow any command (wildcard mode).
   Mode string `default:"start" flag:",command" usage:"run|start|stop"`
 }
 
 var files = uconfig.Files{
-    {Path: file.Workspace(".demo-app/config.json"), Unmarshal: json.Unmarshal, Optional: true},
-    {Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
+    {file.Workspace(".demo-app/config.json"), json.Unmarshal, true},
+    {file.Relative("config.json"), json.Unmarshal, true},
 }
 
 var conf = uconfig.Classic[Config](files)
@@ -155,9 +157,9 @@ The name passed to each constructor is shown in the `-h` usage output as-is, reg
 
 ```go
 var files = uconfig.Files{
-    {Path: file.Workspace(".myapp/config.json"), Unmarshal: json.Unmarshal, Optional: true},
-    {Path: file.Absolute("/etc/myapp/config.json"), Unmarshal: json.Unmarshal, Optional: true},
-    {Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
+    {file.Workspace(".myapp/config.json"), json.Unmarshal, true},
+    {file.Absolute("/etc/myapp/config.json"), json.Unmarshal, true},
+    {file.Relative("config.json"), json.Unmarshal, true},
 }
 ```
 
