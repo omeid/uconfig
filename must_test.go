@@ -47,7 +47,7 @@ func TestMustPanic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	badFile := file.NewReader(open, filepath, json.Unmarshal)
+	badFile := file.New(file.Reader(open, filepath), json.Unmarshal)
 
 	var buf bytes.Buffer
 	uconfig.UsageOutput = &buf

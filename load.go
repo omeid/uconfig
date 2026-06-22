@@ -4,11 +4,7 @@ import (
 	"github.com/omeid/uconfig/plugins"
 	"github.com/omeid/uconfig/plugins/defaults"
 	"github.com/omeid/uconfig/plugins/env"
-	"github.com/omeid/uconfig/plugins/file"
 )
-
-// UnmarshalOptions represents a set of file paths and the appropriate unmarshaller function.
-type UnmarshalOptions = file.UnmarshalOptions
 
 // Load creates a uconfig manager with defaults,environment variables,
 // and optionally file loaders based on the provided PluginProvider.

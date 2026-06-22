@@ -26,8 +26,8 @@ func getSourcePaths(ps []plugins.Plugin) []string {
 
 func TestSourcePathsFromFilePlugins(t *testing.T) {
 	ps := []plugins.Plugin{
-		file.New("config.json", json.Unmarshal, file.Config{Optional: true}),
-		file.New("/etc/app/config.json", json.Unmarshal, file.Config{Optional: true}),
+		file.New(file.Absolute("config.json"), json.Unmarshal, file.Optional(true)),
+		file.New(file.Absolute("/etc/app/config.json"), json.Unmarshal, file.Optional(true)),
 	}
 
 	paths := getSourcePaths(ps)
@@ -45,7 +45,7 @@ func TestSourcePathsFromFilePlugins(t *testing.T) {
 func TestSourcePathsIgnoresNonFilePlugins(t *testing.T) {
 	ps := []plugins.Plugin{
 		defaults.New(),
-		file.New("config.json", json.Unmarshal, file.Config{Optional: true}),
+		file.New(file.Absolute("config.json"), json.Unmarshal, file.Optional(true)),
 	}
 
 	paths := getSourcePaths(ps)
@@ -75,9 +75,12 @@ func TestParseReReadsFile(t *testing.T) {
 	}
 
 	// Write initial config.
-	os.WriteFile(path, []byte(`{"name":"v1"}`), 0o644)
+	err := os.WriteFile(path, []byte(`{"name":"v1"}`), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	plug := file.New(path, json.Unmarshal, file.Config{})
+	plug := file.New(file.Absolute(path), json.Unmarshal)
 	conf := &Config{}
 	if err := plug.(plugins.Walker).Walk(conf); err != nil {
 		t.Fatal(err)
@@ -92,7 +95,10 @@ func TestParseReReadsFile(t *testing.T) {
 	}
 
 	// Change the file.
-	os.WriteFile(path, []byte(`{"name":"v2"}`), 0o644)
+	err = os.WriteFile(path, []byte(`{"name":"v2"}`), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Re-walk with fresh struct and re-parse -- should read new content.
 	conf2 := &Config{}
@@ -108,7 +114,7 @@ func TestParseReReadsFile(t *testing.T) {
 }
 
 func TestParseOptionalMissing(t *testing.T) {
-	plug := file.New("/nonexistent/config.json", json.Unmarshal, file.Config{Optional: true})
+	plug := file.New(file.Absolute("/nonexistent/config.json"), json.Unmarshal, file.Optional(true))
 	conf := &struct{}{}
 	if err := plug.(plugins.Walker).Walk(conf); err != nil {
 		t.Fatal(err)
@@ -121,7 +127,7 @@ func TestParseOptionalMissing(t *testing.T) {
 }
 
 func TestParseRequiredMissing(t *testing.T) {
-	plug := file.New("/nonexistent/config.json", json.Unmarshal, file.Config{Optional: false})
+	plug := file.New(file.Absolute("/nonexistent/config.json"), json.Unmarshal)
 	conf := &struct{}{}
 
 	// Walk should catch missing required file.
@@ -138,13 +144,19 @@ func TestParseMultipleTimes(t *testing.T) {
 		Value int `json:"value"`
 	}
 
-	os.WriteFile(path, []byte(`{"value":1}`), 0o644)
+	err := os.WriteFile(path, []byte(`{"value":1}`), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	plug := file.New(path, json.Unmarshal, file.Config{})
+	plug := file.New(file.Absolute(path), json.Unmarshal)
 
 	// Parse 3 times, changing file each time.
 	for i := 1; i <= 3; i++ {
-		os.WriteFile(path, []byte(fmt.Sprintf(`{"value":%d}`, i)), 0o644)
+		err := os.WriteFile(path, []byte(fmt.Sprintf(`{"value":%d}`, i)), 0o644)
+		if err != nil {
+			t.Fatal(err)
+		}
 		conf := &Config{}
 		if err := plug.(plugins.Walker).Walk(conf); err != nil {
 			t.Fatal(err)

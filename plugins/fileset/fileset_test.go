@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/omeid/uconfig"
-	"github.com/omeid/uconfig/paths"
+
 	"github.com/omeid/uconfig/plugins"
+	"github.com/omeid/uconfig/plugins/file"
 )
 
 type App struct {
@@ -129,12 +130,12 @@ func TestUsage(t *testing.T) {
 		t.Fatalf("failed to write file: %v", err)
 	}
 
-	// The test creates an ad-hoc implementation of paths.Set:
-	p := New("my apps", testSet{
+	// The test creates an ad-hoc implementation of file.Source:
+	p := New("my apps", testSource{
 		name: "test: " + filepath.Join(tempDir, "*.json"),
-		kind: paths.Absolute,
-		resolve: func() ([]string, error) {
-			return []string{file1, file2}, nil
+		kind: file.KindAbsolute,
+		resolve: func() string {
+			return filepath.Join(tempDir, "*.json")
 		},
 	}, json.Unmarshal)
 
@@ -342,12 +343,19 @@ func TestMapSliceConfig(t *testing.T) {
 	}
 }
 
-type testSet struct {
+type testSource struct {
 	name    string
-	kind    paths.Kind
-	resolve func() ([]string, error)
+	kind    file.Kind
+	resolve func() string
 }
 
-func (t testSet) Name() string               { return t.name }
-func (t testSet) Kind() paths.Kind           { return t.kind }
-func (t testSet) Resolve() ([]string, error) { return t.resolve() }
+func (t testSource) Name() string    { return t.name }
+func (t testSource) Kind() file.Kind { return t.kind }
+func (t testSource) Resolve() ([]file.Source, error) {
+	var sources []file.Source
+	matches, _ := filepath.Glob(t.resolve())
+	for _, match := range matches {
+		sources = append(sources, file.Absolute(match))
+	}
+	return sources, nil
+}

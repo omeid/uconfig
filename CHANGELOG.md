@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+### Added
+- **`file.Stdin` Source:** Added `file.Stdin()` constructor to read configuration from standard input. The input is cached so it can be safely re-parsed during live reloads.
+- **`fileset.Set` Interface:** Added `fileset.Absolute`, `fileset.Relative`, and `fileset.Workspace` constructors. These return a `fileset.Set` that lazily resolves glob patterns during `Parse()`, replacing the eager resolution of `file.Source` in `fileset`.
+
+### Changed
+- **`file.New` Signature:** Simplified `file.New` to `func New(source Source, unmarshal Unmarshal, opts ...Option) plugins.Plugin` instead of taking a struct literal.
+
+### Breaking Changes
+- **`file.NewReader` Removed:** Use `file.New(file.Reader(src, name), unmarshal)` instead.
+- **`paths` Package Removed:** The `paths` package is gone, replaced directly by `file.Source`.
+- **`file.Path` Renamed:** Use `file.Source` instead.
 ## v0.16.0
 ### Added
 - **Folded Fields:** Add support for complex structural configuration by supporting slices and maps of structs via a new `FoldVisitor` plugin interface.

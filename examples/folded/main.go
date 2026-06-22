@@ -52,13 +52,12 @@ type Config struct {
 }
 
 var files = uconfig.Files{
-	{file.Absolute("/etc/demo-app/config.json"), json.Unmarshal, true},
-	{file.Relative("config.json"), json.Unmarshal, true},
-	// or short form {"config.json", json.Unmarshal, true},
-	// And, of course, you can add as many files
-	// as you want, and they will be applied
-	// in the given order.
+	{Path: file.Absolute("/etc/demo-app/config.json"), Unmarshal: json.Unmarshal, Optional: true},
+	{Path: file.Relative("config.json"), Unmarshal: json.Unmarshal, Optional: true},
 }
+// Of course, you can add as many files
+// as you want, and they will be applied
+// in the given order.
 
 var (
 	fsPluginAbs      = fileset.New("apps", fileset.Absolute("/etc/app/*.yaml"), json.Unmarshal)

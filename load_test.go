@@ -37,7 +37,7 @@ func TestLoadBasic(t *testing.T) {
 	}
 
 	files := uconfig.Files{
-		{file.Relative("testdata/classic.json"), json.Unmarshal, true},
+		{Path: file.Relative("testdata/classic.json"), Unmarshal: json.Unmarshal, Optional: true},
 	}
 
 	// set some env vars to test env var and plugin orders.
@@ -97,7 +97,7 @@ func TestLoadWithSecret(t *testing.T) {
 	}
 
 	files := uconfig.Files{
-		{file.Relative("testdata/classic.json"), json.Unmarshal, true},
+		{Path: file.Relative("testdata/classic.json"), Unmarshal: json.Unmarshal, Optional: true},
 	}
 
 	SecretProvider := func(name string) (string, error) {
@@ -150,10 +150,6 @@ func TestLoadWithMultiFile(t *testing.T) {
 		},
 	}
 
-	options := uconfig.UnmarshalOptions{
-		".json": json.Unmarshal,
-	}
-
 	// set some env vars to test env var and plugin orders.
 	err := os.Setenv("VERSION", "version-from-env")
 	if err != nil {
@@ -166,7 +162,7 @@ func TestLoadWithMultiFile(t *testing.T) {
 
 	conf := uconfig.Load[f.Config](
 		nil,
-		file.NewMulti("plugins/file/testdata/config_rethink.json", options, true),
+		file.New(file.Relative("plugins/file/testdata/config_rethink.json"), json.Unmarshal, file.Optional(true)),
 	)
 
 	value, err := conf.Parse()

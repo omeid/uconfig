@@ -10,7 +10,7 @@ import (
 	"github.com/omeid/uconfig"
 	"github.com/omeid/uconfig/flat"
 	"github.com/omeid/uconfig/internal/f"
-	"github.com/omeid/uconfig/paths"
+
 	"github.com/omeid/uconfig/plugins"
 	"github.com/omeid/uconfig/plugins/file"
 	"github.com/omeid/uconfig/plugins/fileset"
@@ -85,10 +85,10 @@ func TestUsage(t *testing.T) {
 
 	secretProvider := func(name string) (string, error) { return "top secret token", nil }
 
-	// the test creates an ad-hoc implementation of paths.Set:
+	// the test creates an ad-hoc implementation of fileset.Set:
 	fsPluginAbs := fileset.New("apps", mockSet{
 		name: "testdata/etc/app/*.yaml",
-		kind: paths.Absolute,
+		kind: file.KindAbsolute,
 		resolve: func() ([]string, error) {
 			return []string{"testdata/etc/app/match1.yml", "testdata/etc/app/match2.yml"}, nil
 		},
@@ -96,7 +96,7 @@ func TestUsage(t *testing.T) {
 
 	fsPluginRel := fileset.New("apps", mockSet{
 		name: "testdata/apps.d/*.json",
-		kind: paths.Relative,
+		kind: file.KindRelative,
 		resolve: func() ([]string, error) {
 			return []string{"testdata/apps.d/a.json", "testdata/apps.d/b.json"}, nil
 		},
@@ -135,10 +135,20 @@ func TestUsage(t *testing.T) {
 
 type mockSet struct {
 	name    string
-	kind    paths.Kind
+	kind    file.Kind
 	resolve func() ([]string, error)
 }
 
-func (m mockSet) Name() string               { return m.name }
-func (m mockSet) Kind() paths.Kind           { return m.kind }
-func (m mockSet) Resolve() ([]string, error) { return m.resolve() }
+func (m mockSet) Name() string    { return m.name }
+func (m mockSet) Kind() file.Kind { return m.kind }
+func (m mockSet) Resolve() ([]file.Source, error) {
+	paths, err := m.resolve()
+	if err != nil {
+		return nil, err
+	}
+	var sources []file.Source
+	for _, p := range paths {
+		sources = append(sources, file.Absolute(p))
+	}
+	return sources, nil
+}

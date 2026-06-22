@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/omeid/uconfig/paths"
 	"github.com/omeid/uconfig/plugins"
 )
 
@@ -19,7 +18,7 @@ var (
 // RequireOne represents a set of file paths and their unmarshal functions,
 // where exactly one of the files must exist.
 type RequireOne []struct {
-	Path      paths.One
+	Path      Source
 	Unmarshal Unmarshal
 }
 
@@ -31,7 +30,7 @@ func (r RequireOne) Plugins() []plugins.Plugin {
 type requireOneWalker struct {
 	files RequireOne
 	match *struct {
-		Path      paths.One
+		Path      Source
 		Unmarshal Unmarshal
 	}
 	matchResolved string
@@ -105,7 +104,7 @@ func (e *requireOneWalker) Usage(fieldname string) (string, string) {
 	if fieldname == "." {
 		var pathsList []string
 		for _, f := range e.files {
-			if f.Path.Kind() != paths.Unknown {
+			if f.Path.Kind() != KindUnknown {
 				pathsList = append(pathsList, fmt.Sprintf("%-10s %s", f.Path.Kind().String()+":", f.Path.Name()))
 			} else {
 				pathsList = append(pathsList, f.Path.Name())

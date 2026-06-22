@@ -46,7 +46,7 @@ func TestClassicBasic(t *testing.T) {
 	}
 
 	files := uconfig.Files{
-		{file.Relative("testdata/classic.json"), json.Unmarshal, true},
+		{Path: file.Relative("testdata/classic.json"), Unmarshal: json.Unmarshal, Optional: true},
 	}
 
 	// set some env vars to test env var and plugin orders.
@@ -106,7 +106,7 @@ func TestClassicWithSecret(t *testing.T) {
 	}
 
 	files := uconfig.Files{
-		{file.Relative("testdata/classic.json"), json.Unmarshal, true},
+		{Path: file.Relative("testdata/classic.json"), Unmarshal: json.Unmarshal, Optional: true},
 	}
 
 	SecretProvider := func(name string) (string, error) {

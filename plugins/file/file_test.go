@@ -66,7 +66,7 @@ func TestFileReader(t *testing.T) {
 		},
 	} {
 
-		conf := uconfig.New[f.Config](file.NewReader(tc.Source, "[stream]", tc.Unmarshall))
+		conf := uconfig.New[f.Config](file.New(file.Reader(tc.Source, "[stream]"), tc.Unmarshall))
 
 		value, err := conf.Parse()
 		if err != nil {
@@ -116,7 +116,7 @@ func TestFileOpen(t *testing.T) {
 		},
 	} {
 
-		conf := uconfig.New[f.Config](file.New(tc.Source, tc.Unmarshall, file.Config{}))
+		conf := uconfig.New[f.Config](file.New(file.Absolute(tc.Source), tc.Unmarshall))
 		value, err := conf.Parse()
 		if err != nil {
 			t.Fatal(err)
@@ -160,8 +160,8 @@ func TestMulti(t *testing.T) {
 		}
 	}`
 
-	reader := file.NewReader(bytes.NewReader([]byte(srcJSON)), "[stream]", json.Unmarshal)
-	open := file.New("testdata/config_rethink.json", json.Unmarshal, file.Config{})
+	reader := file.New(file.Reader(bytes.NewReader([]byte(srcJSON)), "[stream]"), json.Unmarshal)
+	open := file.New(file.Absolute("testdata/config_rethink.json"), json.Unmarshal)
 
 	conf := uconfig.New[f.Config](reader, open)
 
@@ -187,7 +187,7 @@ func TestBadFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reader := file.NewReader(open, filepath, json.Unmarshal)
+	reader := file.New(file.Reader(open, filepath), json.Unmarshal)
 
 	conf := uconfig.New[f.Config](reader)
 	_, err = conf.Parse()
@@ -208,7 +208,7 @@ func TestBadFileContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reader := file.NewReader(open, filepath, json.Unmarshal)
+	reader := file.New(file.Reader(open, filepath), json.Unmarshal)
 
 	conf := uconfig.New[f.Config](reader)
 	_, err = conf.Parse()

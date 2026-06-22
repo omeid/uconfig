@@ -1,14 +1,12 @@
-// Package fileset provides a fileset plugin for uconfig.
 package fileset
 
 import (
 	"fmt"
-	"os"
+	"io"
 	"path/filepath"
 	"strings"
 
 	"github.com/omeid/uconfig/flat"
-	"github.com/omeid/uconfig/paths"
 	"github.com/omeid/uconfig/plugins"
 	"github.com/omeid/uconfig/plugins/file"
 )
@@ -19,52 +17,21 @@ func init() {
 	plugins.RegisterTag(tag)
 }
 
-type absolute string
-
-func (a absolute) Name() string               { return string(a) }
-func (a absolute) Kind() paths.Kind           { return paths.Absolute }
-func (a absolute) Resolve() ([]string, error) { return filepath.Glob(string(a)) }
-
-// Absolute returns a paths.Set for a fixed absolute path/glob.
-func Absolute(pattern string) paths.Set {
-	return absolute(pattern)
-}
-
-type relative string
-
-func (r relative) Name() string     { return string(r) }
-func (r relative) Kind() paths.Kind { return paths.Relative }
-func (r relative) Resolve() ([]string, error) {
-	abs, err := filepath.Abs(string(r))
-	if err != nil {
-		return nil, err
-	}
-	return filepath.Glob(abs)
-}
-
-// Relative returns a paths.Set that resolves a relative path/glob against
-// the working directory at the time of the call.
-func Relative(pattern string) paths.Set {
-	return relative(pattern)
-}
-
 type visitor struct {
 	name         string
-	path         paths.Set
-	unmarshal    func(any) error
+	set          Set
+	unmarshal    file.Unmarshal
 	currentData  []byte
 	fields       flat.Fields
 	matchedField flat.Field
 }
 
 // New returns a fileset plugin.
-func New(name string, path paths.Set, unmarshaller file.Unmarshal) plugins.Plugin {
+func New(name string, set Set, unmarshal file.Unmarshal) plugins.Plugin {
 	v := &visitor{
-		name: name,
-		path: path,
-	}
-	v.unmarshal = func(ptr any) error {
-		return unmarshaller(v.currentData, ptr)
+		name:      name,
+		set:       set,
+		unmarshal: unmarshal,
 	}
 	return v
 }
@@ -97,22 +64,33 @@ func (v *visitor) Parse() error {
 		return fmt.Errorf("fileset: visit was not called or failed to find matching field for tag %q", v.name)
 	}
 
-	files, err := v.path.Resolve()
+	sources, err := v.set.Resolve()
 	if err != nil {
-		return fmt.Errorf("fileset: failed to resolve path %q: %w", v.path.Name(), err)
+		return fmt.Errorf("fileset: failed to resolve path %q: %w", v.set.Name(), err)
 	}
 
-	for _, file := range files {
-		data, err := os.ReadFile(file)
+	for _, match := range sources {
+		rc, err := match.Open()
 		if err != nil {
-			return fmt.Errorf("fileset: failed to read file %q: %w", file, err)
+			return fmt.Errorf("fileset: failed to open file %q: %w", match.Resolve(), err)
+		}
+
+		data, err := io.ReadAll(rc)
+		closeErr := rc.Close()
+		if err != nil {
+			return fmt.Errorf("fileset: failed to read file %q: %w", match.Resolve(), err)
+		}
+		if closeErr != nil {
+			return fmt.Errorf("fileset: failed to close file %q: %w", match.Resolve(), closeErr)
 		}
 
 		v.currentData = data
-		key := filepath.Base(file)
-		err = v.matchedField.Append(key, v.unmarshal)
+		key := filepath.Base(match.Resolve())
+		err = v.matchedField.Append(key, func(ptr any) error {
+			return v.unmarshal(v.currentData, ptr)
+		})
 		if err != nil {
-			return fmt.Errorf("fileset: failed to append file %q: %w", file, err)
+			return fmt.Errorf("fileset: failed to append file %q: %w", match.Resolve(), err)
 		}
 	}
 
@@ -121,7 +99,7 @@ func (v *visitor) Parse() error {
 
 // SourcePaths implements plugins.SourcePaths.
 func (v *visitor) SourcePaths() []plugins.SourcePath {
-	pattern := v.path.Name()
+	pattern := v.set.Name()
 	if pattern == "" {
 		return nil
 	}
@@ -133,7 +111,7 @@ func (v *visitor) SourcePaths() []plugins.SourcePath {
 	baseDir := getBaseDir(pattern)
 	absDir, err := filepath.Abs(baseDir)
 	if err == nil {
-		return []plugins.SourcePath{{Name: v.path.Name(), Path: absDir}}
+		return []plugins.SourcePath{{Name: v.set.Name(), Path: absDir}}
 	}
 	return nil
 }
@@ -145,7 +123,11 @@ func (v *visitor) Usage(fieldname string) (string, string) {
 		name, _ = v.matchedField.Name("")
 	}
 	if name == fieldname {
-		return "Fileset", v.path.Kind().String() + ": " + v.path.Name() + "\t\n"
+		kind := v.set.Kind()
+		if kind != file.KindUnknown {
+			return "Fileset", kind.String() + ": " + v.set.Name() + "\t\n"
+		}
+		return "Fileset", v.set.Name() + "\t\n"
 	}
 	return "", ""
 }

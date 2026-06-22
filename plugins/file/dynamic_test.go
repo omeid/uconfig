@@ -210,3 +210,22 @@ func TestRelativeResolvesAgainstCWD(t *testing.T) {
 		t.Fatalf("name: got %q, want %q", p.Name(), "config.json")
 	}
 }
+
+func TestDashReturnsStdin(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		source file.Source
+	}{
+		{"Absolute", file.Absolute("-")},
+		{"Relative", file.Relative("-")},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.source.Kind() != file.KindStdin {
+				t.Errorf("expected kind %v, got %v", file.KindStdin, tc.source.Kind())
+			}
+			if tc.source.Name() != "-" {
+				t.Errorf("expected name -, got %q", tc.source.Name())
+			}
+		})
+	}
+}

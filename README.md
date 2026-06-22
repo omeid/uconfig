@@ -145,15 +145,17 @@ See the _[flat view](https://godoc.org/github.com/omeid/uconfig/flat)_ package f
 
 ## File Paths
 
-Config file paths are specified using `file.Path` constructors. Paths are resolved lazily at parse time, not at declaration time, making them safe to use in `var` declarations and compatible with live reload via [uconfig-watchfiles](https://github.com/omeid/uconfig-watchfiles).
+Config file paths are specified using `file.Source` constructors. Paths are resolved lazily at parse time, not at declaration time, making them safe to use in `var` declarations and compatible with live reload via [uconfig-watchfiles](https://github.com/omeid/uconfig-watchfiles).
 
 | Constructor | Usage output |
 |---|---|
 | `file.Absolute("/etc/app/config.json")` | `absolute:  /etc/app/config.json` |
 | `file.Relative("config.json")` | `relative:  config.json` |
+| `file.Absolute("-")` | `stdin:     -` |
+| `file.Stdin()` | `stdin:     -` |
 | `file.Workspace(".myapp/config")` | `workspace: .myapp/config` |
 
-The name passed to each constructor is shown in the `-h` usage output as-is, regardless of what the path resolves to on disk.
+The name passed to each constructor is shown in the `-h` usage output as-is, regardless of what the path resolves to on disk. `file.Absolute` and `file.Relative` will mapp `-` to `file.Stdin()`.
 
 ```go
 var files = uconfig.Files{
@@ -244,7 +246,7 @@ type Config struct {
 ## Secrets Plugin
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/omeid/uconfig/plugins/secret)
 
-The secret provider allows you to grab the value of a config from anywhere you want. You simply need to implement the `func(name string) (value string)` function and pass it to the secrets plugin.
+The secret provider allows you to grab the value of a config from anywhere you want. You simply need to implement the `func(name string) (value string, err error)` function and pass it to the secrets plugin.
 
 Unlike most other plugins, secret requires explicit `secret:""` tag, this is because only specific config values like passwords and api keys come from a secret provider, compared to the rest of the config which can be set in various ways.
 
